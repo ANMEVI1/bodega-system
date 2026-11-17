@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import './nia-chatbot.css';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
@@ -363,6 +364,11 @@
     animation-delay: calc(var(--enter-delay, 0) * 90ms);
 }
 
+[data-enter-delay="1"] { --enter-delay: 1; }
+[data-enter-delay="2"] { --enter-delay: 2; }
+[data-enter-delay="3"] { --enter-delay: 3; }
+[data-enter-delay="4"] { --enter-delay: 4; }
+
 /* Scroll-Triggered Cinematic Reveals */
 html.js-cinema [data-reveal] {
     opacity: 0;
@@ -374,6 +380,9 @@ html.js-cinema [data-reveal] {
         filter 0.85s var(--ease-cinema);
     transition-delay: calc(var(--stagger, 0) * 75ms);
 }
+
+[data-stagger="1"] { --stagger: 1; }
+[data-stagger="2"] { --stagger: 2; }
 
 html.js-cinema [data-reveal].is-revealed {
     opacity: 1;
@@ -394,10 +403,18 @@ html.js-cinema [data-reveal].is-revealed {
 }
 
 .chart-bar-fill {
+    height: var(--bar-height, 6%);
     transform-origin: bottom;
     animation: chartRise 0.95s var(--ease-cinema) both;
     animation-delay: calc(var(--bar-index, 0) * 90ms + 180ms);
 }
+
+[data-bar-index="0"] { --bar-index: 0; }
+[data-bar-index="1"] { --bar-index: 1; }
+[data-bar-index="2"] { --bar-index: 2; }
+[data-bar-index="3"] { --bar-index: 3; }
+[data-bar-index="4"] { --bar-index: 4; }
+[data-bar-index="5"] { --bar-index: 5; }
 
 /* FAQ Accordion Smooth Height Transition */
 .faq-answer {
