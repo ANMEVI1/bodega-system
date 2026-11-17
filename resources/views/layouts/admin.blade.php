@@ -22,7 +22,9 @@
         $navItems = [
             ['admin.dashboard', 'Inicio', 'home', null],
             ['admin.clients.index', 'Clientes', 'users', null],
-            ['admin.products.index', 'Inventario', 'package', ($navLowStock ?? 0) > 0 ? $navLowStock : null],
+            ['admin.products.index', 'Productos', 'shopping-bag', null],
+            ['admin.categories.index', 'Categorías', 'tag', null],
+            ['admin.inventory.index', 'Inventario', 'layers', ($navLowStock ?? 0) > 0 ? $navLowStock : null],
             ['admin.suppliers.index', 'Proveedores', 'truck', null],
             ['admin.sales.index', 'Ventas y finanzas', 'trending-up', null],
             ['admin.contacts.index', 'Consultas web', 'message', ($navNewContacts ?? 0) > 0 ? $navNewContacts : null],

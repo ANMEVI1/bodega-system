@@ -66,6 +66,8 @@ class BodegaFlowsTest extends TestCase
         $this->get(route('admin.site.edit'))->assertOk();
         $this->get(route('admin.clients.create'))->assertOk();
         $this->get(route('admin.products.create'))->assertOk();
+        $this->get(route('admin.categories.index'))->assertOk();
+        $this->get(route('admin.inventory.index'))->assertOk();
         $this->get(route('admin.suppliers.create'))->assertOk();
     }
 

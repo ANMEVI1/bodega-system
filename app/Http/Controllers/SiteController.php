@@ -32,6 +32,7 @@ class SiteController extends Controller
     {
         $products = Product::query()
             ->where('active', true)
+            ->where('is_public', true)
             ->where('stock', '>', 0)
             ->orderBy('category')
             ->orderBy('name')
