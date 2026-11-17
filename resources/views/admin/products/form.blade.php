@@ -5,7 +5,7 @@
     <div class="mx-auto max-w-4xl" data-cinema-enter>
         <a href="{{ route('admin.products.index') }}" class="inline-flex items-center gap-1.5 text-xs font-bold text-zinc-400 transition hover:text-white">
             <x-icon name="arrow-left" class="size-4" />
-            Volver al inventario
+            Volver a productos
         </a>
 
         <form method="POST" data-price-calc
@@ -14,29 +14,41 @@
             @csrf @if($product->exists) @method('PUT') @endif
 
             <div>
-                <p class="text-[11px] font-extrabold uppercase tracking-[.18em] text-fuchsia-300">Control inteligente de inventario</p>
-                <h1 class="mt-1 text-2xl font-extrabold text-white">{{ $product->exists ? 'Actualiza el producto' : 'Agrega un producto' }}</h1>
+                <p class="text-[11px] font-extrabold uppercase tracking-[.18em] text-fuchsia-300">Catálogo maestro de productos</p>
+                <h1 class="mt-1 text-2xl font-extrabold text-white">{{ $product->exists ? 'Editar producto' : 'Nuevo producto' }}</h1>
             </div>
 
             <div class="grid gap-4 sm:grid-cols-2">
                 <label class="text-xs font-bold text-zinc-300">
                     Nombre del producto
-                    <input class="field mt-2" name="name" value="{{ old('name', $product->name) }}" maxlength="160" required>
+                    <input class="field mt-2" name="name" id="product-name" value="{{ old('name', $product->name) }}" maxlength="160" required placeholder="Ej. Arroz Extra Costeño 5 kg">
                 </label>
-                <label class="text-xs font-bold text-zinc-300">
-                    SKU / código (opcional)
-                    <input class="field font-mono-num mt-2" name="sku" value="{{ old('sku', $product->sku) }}" maxlength="80">
-                </label>
+                <div>
+                    <div class="flex items-center justify-between">
+                        <label class="text-xs font-bold text-zinc-300">SKU / Código (opcional)</label>
+                        <button type="button" onclick="generateSku()" class="text-[11px] font-semibold text-fuchsia-400 hover:text-fuchsia-300 transition">Generar código</button>
+                    </div>
+                    <input class="field font-mono-num mt-2" name="sku" id="product-sku" value="{{ old('sku', $product->sku) }}" maxlength="80" placeholder="Ej. ABR-10293">
+                </div>
             </div>
 
             <div class="grid gap-4 sm:grid-cols-3">
-                <label class="text-xs font-bold text-zinc-300">
-                    Categoría
-                    <input class="field mt-2" name="category" value="{{ old('category', $product->category ?: 'Abarrotes') }}" maxlength="100" required>
-                </label>
+                <div>
+                    <div class="flex items-center justify-between">
+                        <label class="text-xs font-bold text-zinc-300">Categoría</label>
+                        <a href="{{ route('admin.categories.create') }}" class="text-[11px] font-semibold text-fuchsia-400 hover:text-fuchsia-300 transition">+ Nueva</a>
+                    </div>
+                    <select class="field mt-2" name="category_id">
+                        @foreach($categories as $cat)
+                            <option value="{{ $cat->id }}" @selected(old('category_id', $product->category_id) == $cat->id || (!old('category_id') && old('category', $product->category) === $cat->name))>
+                                {{ $cat->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
                 <label class="text-xs font-bold text-zinc-300">
                     Unidad
-                    <input class="field mt-2" name="unit" value="{{ old('unit', $product->unit ?: 'unidad') }}" maxlength="40" required>
+                    <input class="field mt-2" name="unit" value="{{ old('unit', $product->unit ?: 'unidad') }}" maxlength="40" required placeholder="unidad, kg, litro...">
                 </label>
                 <label class="text-xs font-bold text-zinc-300">
                     Stock actual
@@ -90,10 +102,20 @@
                 </div>
             </div>
 
-            <label class="flex items-center gap-3 text-xs font-bold text-zinc-300">
-                <input class="size-4 rounded accent-fuchsia-500" type="checkbox" name="active" value="1" @checked(old('active', $product->exists ? $product->active : true))>
-                Producto disponible para venta en tienda y panel
-            </label>
+            <div class="space-y-3 pt-2">
+                <label class="flex items-center gap-3 text-xs font-bold text-zinc-300">
+                    <input class="size-4 rounded accent-fuchsia-500" type="checkbox" name="active" value="1" @checked(old('active', $product->exists ? $product->active : true))>
+                    <span>Producto activo (disponible para operaciones de inventario y registro de ventas)</span>
+                </label>
+
+                <label class="flex items-start gap-3 text-xs font-bold text-zinc-400">
+                    <input class="mt-0.5 size-4 rounded accent-fuchsia-500" type="checkbox" name="is_public" value="1" @checked(old('is_public', $product->exists ? $product->is_public : false))>
+                    <div>
+                        <span class="text-zinc-200">Mostrar también en el catálogo de la página web pública</span>
+                        <p class="text-[11px] font-normal text-zinc-500">Por defecto está desactivado. Si no lo marcas, este producto <strong>solo existirá en tu panel de administración</strong>.</p>
+                    </div>
+                </label>
+            </div>
 
             <div class="flex flex-wrap gap-3 pt-2">
                 <button class="btn-primary text-xs">{{ $product->exists ? 'Guardar cambios' : 'Guardar producto' }}</button>
@@ -101,4 +123,16 @@
             </div>
         </form>
     </div>
+
+    <script>
+        function generateSku() {
+            const name = document.getElementById('product-name')?.value || 'PRD';
+            const clean = name.replace(/[^a-zA-Z]/g, '').substring(0, 3).toUpperCase() || 'PRD';
+            const random = Math.floor(1000 + Math.random() * 9000);
+            const skuInput = document.getElementById('product-sku');
+            if (skuInput) {
+                skuInput.value = clean + '-' + random;
+            }
+        }
+    </script>
 @endsection
