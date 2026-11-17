@@ -1,11 +1,13 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExportController;
+use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\SiteController;
@@ -30,7 +32,9 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     Route::resource('clientes', ClientController::class)->except('show')->parameters(['clientes' => 'client'])->names('clients');
-    Route::resource('productos', ProductController::class)->except('show')->parameters(['productos' => 'product'])->names('products');
+    Route::resource('productos', ProductController::class)->parameters(['productos' => 'product'])->names('products');
+    Route::resource('categorias', CategoryController::class)->except('show')->parameters(['categorias' => 'category'])->names('categories');
+    Route::get('/inventario', [InventoryController::class, 'index'])->name('inventory.index');
     Route::resource('proveedores', SupplierController::class)->except('show')->parameters(['proveedores' => 'supplier'])->names('suppliers');
     Route::get('/ventas', [SaleController::class, 'index'])->name('sales.index');
     Route::post('/ventas', [SaleController::class, 'store'])->name('sales.store');

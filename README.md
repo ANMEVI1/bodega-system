@@ -23,11 +23,37 @@ El proyecto usa Laravel 13, Laravel Socialite, Vite y Tailwind CSS 4. Conserva e
 
 La configuración local usa SQLite, sesiones en archivos y el driver de correo `log`; no se conecta a bases de datos externas. No reemplaces una base existente ni ejecutes `migrate:fresh` si ya guardaste información.
 
+## Ejecución aislada sin Docker
+
+En Windows puedes usar un PHP 8.3 portátil guardado dentro de este proyecto. No modifica el PHP ni la base de datos de XAMPP ni agrega nada al `PATH` global. Requiere PowerShell, acceso a Internet y Node.js/npm.
+
+1. Desde PowerShell en la carpeta del proyecto, ejecuta `.\scripts\setup-isolated.ps1`. Descarga PHP desde `windows.php.net`, Composer desde `getcomposer.org`, instala dependencias locales, crea `.env.isolated` y una base SQLite separada.
+2. Ejecuta `.\scripts\start-isolated.ps1` y visita `http://127.0.0.1:8000`.
+3. Usa `Ctrl+C` para detener el servidor. Los binarios y la configuración aislada se guardan bajo `.tools` y `.env.isolated`, excluidos de Git.
+4. Abre `http://127.0.0.1:8000/setup` para crear el primer administrador.
+
+## Ejecución aislada con Docker (recomendada para conservar XAMPP)
+
+Esta alternativa usa PHP 8.3 dentro de Docker, SQLite en un volumen propio y publica el sitio solo en `http://localhost:8000`. No instala ni cambia PHP, MySQL, Apache o la configuración de XAMPP.
+
+1. Instala e inicia Docker Desktop para Windows.
+2. Desde PowerShell, en la carpeta del proyecto, compila los recursos y levanta Laravel:
+
+   ```powershell
+   docker compose run --rm assets
+   docker compose up --build
+   ```
+
+3. Visita `http://localhost:8000`. La primera ejecución instala Composer, crea la base SQLite del contenedor y aplica migraciones y contenido inicial.
+4. Abre `http://localhost:8000/setup` para crear el primer administrador; el formulario se cierra al crear la cuenta.
+
+Detén el servicio con `Ctrl+C` y vuelve a iniciarlo con `docker compose up`. Los datos SQLite y la clave de la aplicación viven en el volumen `bodega_storage`, independiente de XAMPP. `docker compose down` conserva esos datos; evita `docker compose down --volumes` si quieres mantenerlos. Para eliminar el contenedor e imagen sin borrar datos: `docker compose down`.
+
 ## Funcionalidades
 
 - Inicio público editable: banner, presentación, productos disponibles, preguntas frecuentes, contacto y enlace a WhatsApp.
 - Acceso de administrador con correo/contraseña, inicio Google opcional y recuperación por enlace de correo.
-- Resumen financiero, clientes, inventario con sugerencia de precio, proveedores e historial de compras.
+- Resumen financiero, cartera CRM de clientes con datos fiscales, contacto, ubicación, origen, historial de productos y mensajes predefinidos por WhatsApp, inventario con sugerencia de precio, proveedores e historial de compras.
 - Registro de ventas y compras con actualización transaccional del inventario.
 - Utilidad por producto basada en costo de compra más gastos directos por unidad; gastos generales e impuestos no están incluidos.
 - Formularios de contacto y bandeja privada para responder por WhatsApp.
