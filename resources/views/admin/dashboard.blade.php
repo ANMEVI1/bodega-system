@@ -4,13 +4,55 @@
 @section('content')
     @php
         $maxSales = max(1, (float) $monthlySales->max('total'));
+        $adminFirstName = explode(' ', trim(auth()->user()?->name ?? 'Administrador'))[0];
+        $newContactsTotal = $navNewContacts ?? $recentContacts->count();
+        $kpiCards = [
+            [
+                'label' => 'Ventas del mes',
+                'raw' => (float) $monthRevenue,
+                'prefix' => 'S/ ',
+                'decimals' => 2,
+                'hint' => 'Ingresos registrados (pagados)',
+                'icon' => 'trending-up',
+                'badgeTone' => 'text-emerald-300 bg-emerald-400/10 border-emerald-400/20',
+            ],
+            [
+                'label' => 'Utilidad de productos',
+                'raw' => (float) $monthProfit,
+                'prefix' => 'S/ ',
+                'decimals' => 2,
+                'hint' => 'Ventas menos costo y gastos unitarios',
+                'icon' => 'wallet',
+                'badgeTone' => 'text-violet-300 bg-violet-400/10 border-violet-400/20',
+            ],
+            [
+                'label' => 'Productos activos',
+                'raw' => (float) $productsCount,
+                'prefix' => '',
+                'decimals' => 0,
+                'hint' => $lowStockCount . ' con stock bajo',
+                'icon' => 'package',
+                'badgeTone' => $lowStockCount
+                    ? 'text-amber-300 bg-amber-400/10 border-amber-400/20'
+                    : 'text-cyan-300 bg-cyan-400/10 border-cyan-400/20',
+            ],
+            [
+                'label' => 'Clientes registrados',
+                'raw' => (float) $clientsCount,
+                'prefix' => '',
+                'decimals' => 0,
+                'hint' => $suppliersCount . ' proveedores activos',
+                'icon' => 'users',
+                'badgeTone' => 'text-fuchsia-300 bg-fuchsia-400/10 border-fuchsia-400/20',
+            ],
+        ];
     @endphp
 
-    <div data-cinema-enter style="--enter-delay: 0" class="flex flex-wrap items-end justify-between gap-4">
+    <div data-cinema-enter class="flex flex-wrap items-end justify-between gap-4">
         <div>
             <p class="text-xs font-bold uppercase tracking-[.18em] text-fuchsia-300/90">Centro de operaciones</p>
             <h1 class="mt-1.5 text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
-                ¡Hola, {{ explode(' ', auth()->user()->name)[0] }}!
+                ¡Hola, {{ $adminFirstName }}!
                 <span class="font-serif-display font-normal italic text-amber-300">resumen en vivo</span>
             </h1>
         </div>
@@ -28,25 +70,20 @@
 
     {{-- KPI CARDS --}}
     <div class="mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        @foreach([
-            ['Ventas del mes', (float) $monthRevenue, 'S/ ', 2, 'Ingresos registrados (pagados)', 'trending-up', 'text-emerald-300 bg-emerald-400/10 border-emerald-400/20'],
-            ['Utilidad de productos', (float) $monthProfit, 'S/ ', 2, 'Ventas menos costo y gastos unitarios', 'wallet', 'text-violet-300 bg-violet-400/10 border-violet-400/20'],
-            ['Productos activos', (float) $productsCount, '', 0, $lowStockCount.' con stock bajo', 'package', $lowStockCount ? 'text-amber-300 bg-amber-400/10 border-amber-400/20' : 'text-cyan-300 bg-cyan-400/10 border-cyan-400/20'],
-            ['Clientes registrados', (float) $clientsCount, '', 0, $suppliersCount.' proveedores activos', 'users', 'text-fuchsia-300 bg-fuchsia-400/10 border-fuchsia-400/20'],
-        ] as [$label, $raw, $prefix, $decimals, $hint, $icon, $badgeTone])
-            <article data-cinema-enter style="--enter-delay: {{ $loop->index + 1 }}"
+        @foreach($kpiCards as $card)
+            <article data-cinema-enter data-enter-delay="{{ $loop->index + 1 }}"
                      class="panel spotlight-card rounded-3xl p-5 sm:p-6">
                 <div class="flex items-center justify-between gap-3">
-                    <p class="text-xs font-bold text-zinc-400">{{ $label }}</p>
-                    <span class="grid size-10 place-items-center rounded-2xl border {{ $badgeTone }}">
-                        <x-icon :name="$icon" class="size-4" />
+                    <p class="text-xs font-bold text-zinc-400">{{ $card['label'] }}</p>
+                    <span class="grid size-10 place-items-center rounded-2xl border {{ $card['badgeTone'] }}">
+                        <x-icon :name="$card['icon']" class="size-4" />
                     </span>
                 </div>
                 <p class="font-mono-num mt-5 text-2xl font-extrabold tracking-tight text-white sm:text-3xl"
-                   data-countup="{{ $raw }}" data-prefix="{{ $prefix }}" data-decimals="{{ $decimals }}">
-                    {{ $prefix }}{{ number_format($raw, $decimals) }}
+                   data-countup="{{ $card['raw'] }}" data-prefix="{{ $card['prefix'] }}" data-decimals="{{ $card['decimals'] }}">
+                    {{ $card['prefix'] }}{{ number_format($card['raw'], $card['decimals']) }}
                 </p>
-                <p class="mt-2 text-[11px] font-medium text-zinc-500">{{ $hint }}</p>
+                <p class="mt-2 text-[11px] font-medium text-zinc-500">{{ $card['hint'] }}</p>
             </article>
         @endforeach
     </div>
@@ -59,7 +96,7 @@
                     <p class="text-[11px] font-bold uppercase tracking-[.16em] text-fuchsia-300/90">Ritmo de ventas</p>
                     <h2 class="mt-1 text-lg font-extrabold tracking-tight text-white">Últimos seis meses</h2>
                 </div>
-                <span class="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[.03] px-3 py-1.5 text-[11px] font-bold text-zinc-300">
+                <span class="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/3 px-3 py-1.5 text-[11px] font-bold text-zinc-300">
                     <x-icon name="bar-chart" class="size-3.5 text-fuchsia-300" />
                     PEN · ventas pagadas
                 </span>
@@ -69,7 +106,7 @@
                 {{-- Subtle chart gridlines --}}
                 <div class="pointer-events-none absolute inset-x-0 bottom-7 top-2 flex flex-col justify-between">
                     @for($g = 0; $g < 4; $g++)
-                        <div class="border-b border-dashed border-white/[.06]"></div>
+                        <div class="border-b border-dashed border-white/6"></div>
                     @endfor
                 </div>
 
@@ -90,8 +127,9 @@
                             </span>
 
                             <div class="flex h-36 w-full items-end justify-center">
-                                <div class="chart-bar-fill relative w-full max-w-12 rounded-t-2xl bg-gradient-to-t from-violet-600/85 via-fuchsia-500/90 to-fuchsia-300 shadow-lg shadow-fuchsia-500/15 transition duration-300 group-hover:brightness-125 group-hover:shadow-fuchsia-500/35"
-                                     style="height: {{ $height }}%; --bar-index: {{ $loop->index }}">
+                                <div class="chart-bar-fill relative w-full max-w-12 rounded-t-2xl bg-linear-to-t from-violet-600/85 via-fuchsia-500/90 to-fuchsia-300 shadow-lg shadow-fuchsia-500/15 transition duration-300 group-hover:brightness-125 group-hover:shadow-fuchsia-500/35"
+                                     data-bar-height="{{ round($height, 2) }}"
+                                     data-bar-index="{{ $loop->index }}">
                                     <span class="absolute inset-x-1.5 top-1 h-1 rounded-full bg-white/45"></span>
                                 </div>
                             </div>
@@ -102,12 +140,12 @@
                 </div>
             </div>
 
-            <p class="mt-5 border-t border-white/[.06] pt-4 text-[11px] text-zinc-500">
+            <p class="mt-5 border-t border-white/6 pt-4 text-[11px] text-zinc-500">
                 La utilidad descuenta costos de compra y gastos directos por producto; no incluye gastos generales ni impuestos.
             </p>
         </section>
 
-        <section data-reveal style="--stagger: 1" class="panel spotlight-card rounded-3xl p-5 sm:p-7">
+        <section data-reveal data-stagger="1" class="panel spotlight-card rounded-3xl p-5 sm:p-7">
             <div class="flex items-start justify-between gap-3">
                 <div>
                     <p class="text-[11px] font-bold uppercase tracking-[.16em] text-amber-300/90">Reposición</p>
@@ -121,7 +159,7 @@
 
             <div class="mt-5 space-y-3">
                 @forelse($lowStockProducts as $product)
-                    <div class="flex items-center gap-3 rounded-2xl border border-amber-300/10 bg-white/[.025] p-3.5 transition hover:border-amber-300/25 hover:bg-white/[.045]">
+                    <div class="flex items-center gap-3 rounded-2xl border border-amber-300/10 bg-white/2.5 p-3.5 transition hover:border-amber-300/25 hover:bg-white/4.5">
                         <span class="grid size-10 shrink-0 place-items-center rounded-xl bg-amber-400/10 text-amber-300">
                             <x-icon name="alert-triangle" class="size-4" />
                         </span>
@@ -134,7 +172,7 @@
                         </span>
                     </div>
                 @empty
-                    <div class="flex items-start gap-3 rounded-2xl border border-emerald-400/15 bg-emerald-400/[.05] p-4 text-xs leading-5 text-emerald-100">
+                    <div class="flex items-start gap-3 rounded-2xl border border-emerald-400/15 bg-emerald-400/5 p-4 text-xs leading-5 text-emerald-100">
                         <x-icon name="check-circle" class="mt-0.5 size-4 shrink-0 text-emerald-400" />
                         <span>Todo en orden. No hay productos por debajo del mínimo de reposición.</span>
                     </div>
@@ -157,24 +195,24 @@
                 </a>
             </div>
             <div class="overflow-x-auto">
-                <table class="w-full min-w-[540px] text-left text-xs">
-                    <thead class="bg-white/[.03] text-[10px] font-extrabold uppercase tracking-wider text-zinc-500">
+                <table class="w-full min-w-135 text-left text-xs">
+                    <thead class="bg-white/3 text-[10px] font-extrabold uppercase tracking-wider text-zinc-500">
                         <tr>
-                            <th class="px-6 py-3.5">Producto</th>
-                            <th class="px-4 py-3.5">Cliente</th>
-                            <th class="px-4 py-3.5">Fecha</th>
-                            <th class="px-6 py-3.5 text-right">Total</th>
+                            <th scope="col" class="px-6 py-3.5">Producto</th>
+                            <th scope="col" class="px-4 py-3.5">Cliente</th>
+                            <th scope="col" class="px-4 py-3.5">Fecha</th>
+                            <th scope="col" class="px-6 py-3.5 text-right">Total</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($recentSales as $sale)
                             <tr class="table-row">
                                 <td class="px-6 py-4">
-                                    <p class="font-bold text-white">{{ $sale->product->name }}</p>
+                                    <p class="font-bold text-white">{{ $sale->product?->name ?? 'Producto no disponible' }}</p>
                                     <p class="font-mono-num mt-0.5 text-[10px] text-zinc-500">{{ $sale->reference }}</p>
                                 </td>
                                 <td class="px-4 py-4 text-zinc-300">{{ $sale->client?->name ?? 'Venta al público' }}</td>
-                                <td class="font-mono-num px-4 py-4 text-zinc-400">{{ $sale->sold_at->format('d/m/Y') }}</td>
+                                <td class="font-mono-num px-4 py-4 text-zinc-400">{{ $sale->sold_at?->format('d/m/Y') ?? '—' }}</td>
                                 <td class="font-mono-num px-6 py-4 text-right font-extrabold text-white">S/ {{ number_format((float) $sale->total, 2) }}</td>
                             </tr>
                         @empty
@@ -189,7 +227,7 @@
             </div>
         </section>
 
-        <section data-reveal style="--stagger: 1" class="panel spotlight-card rounded-3xl p-5 sm:p-7">
+        <section data-reveal data-stagger="1" class="panel spotlight-card rounded-3xl p-5 sm:p-7">
             <div class="flex items-start justify-between">
                 <div>
                     <p class="text-[11px] font-bold uppercase tracking-[.16em] text-zinc-400">Lo que más se mueve</p>
@@ -226,7 +264,7 @@
                 @endif
             </div>
 
-            <div class="mt-6 border-t border-white/[.07] pt-4">
+            <div class="mt-6 border-t border-white/7 pt-4">
                 <p class="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500">Clientes frecuentes</p>
                 <div class="mt-3 space-y-2.5">
                     @forelse($topClients as $client)
@@ -241,62 +279,15 @@
             </div>
 
             <div class="mt-5 grid grid-cols-2 gap-3">
-                <div class="rounded-2xl border border-white/[.07] bg-white/[.03] p-3.5">
+                <div class="rounded-2xl border border-white/7 bg-white/3 p-3.5">
                     <p class="text-[10px] font-semibold text-zinc-500">Compras este mes</p>
                     <p class="font-mono-num mt-1 text-sm font-extrabold text-white">S/ {{ number_format((float) $monthPurchases, 2) }}</p>
                 </div>
-                <div class="rounded-2xl border border-white/[.07] bg-white/[.03] p-3.5">
+                <div class="rounded-2xl border border-white/7 bg-white/3 p-3.5">
                     <p class="text-[10px] font-semibold text-zinc-500">Consultas nuevas</p>
-                    <p class="font-mono-num mt-1 text-sm font-extrabold text-white">{{ $recentContacts->count() }}</p>
+                    <p class="font-mono-num mt-1 text-sm font-extrabold text-white">{{ $newContactsTotal }}</p>
                 </div>
             </div>
         </section>
     </div>
-
-    {{-- ASISTENTE NIA --}}
-    <section id="asistente" data-reveal data-chat class="panel spotlight-card mt-5 rounded-3xl p-5 sm:p-7">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-            <div class="flex items-center gap-3.5">
-                <span class="grid size-11 place-items-center rounded-2xl border border-fuchsia-400/25 bg-gradient-to-br from-fuchsia-500/20 to-violet-600/20 text-fuchsia-300 shadow-lg shadow-fuchsia-500/10">
-                    <x-icon name="sparkles" class="size-5" />
-                </span>
-                <div>
-                    <p class="text-[11px] font-bold uppercase tracking-[.16em] text-fuchsia-300">Asistente operativo</p>
-                    <h2 class="text-base font-extrabold text-white">NIA, a tu servicio</h2>
-                </div>
-            </div>
-            <span class="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/[.07] px-3 py-1 text-[10px] font-bold text-emerald-200">
-                <span class="size-1.5 rounded-full bg-emerald-400"></span>
-                Motor local instantáneo
-            </span>
-        </div>
-
-        <p data-chat-reply aria-live="polite" class="mt-4 rounded-2xl border border-white/[.07] bg-black/30 p-4 text-xs leading-6 text-zinc-300 transition">
-            Pregúntame por tus ventas del mes o registra datos al instante con comandos rápidos.
-        </p>
-
-        <div class="mt-3 flex flex-wrap gap-2">
-            <button type="button" data-chat-prompt="Resumen de ventas" data-auto-submit="true"
-                class="rounded-full border border-white/10 bg-white/[.04] px-3 py-1.5 text-[11px] font-semibold text-zinc-300 transition hover:border-fuchsia-400/30 hover:bg-fuchsia-500/10 hover:text-white">
-                Resumen de ventas
-            </button>
-            <button type="button" data-chat-prompt="Cliente Ana Paz | WhatsApp: 51912345678"
-                class="font-mono-num rounded-full border border-white/10 bg-white/[.04] px-3 py-1.5 text-[11px] text-zinc-300 transition hover:border-fuchsia-400/30 hover:bg-fuchsia-500/10 hover:text-white">
-                + Cliente rápido
-            </button>
-            <button type="button" data-chat-prompt="Producto Avena | Precio: 4.50 | Costo: 3.20 | Stock: 12"
-                class="font-mono-num rounded-full border border-white/10 bg-white/[.04] px-3 py-1.5 text-[11px] text-zinc-300 transition hover:border-fuchsia-400/30 hover:bg-fuchsia-500/10 hover:text-white">
-                + Producto rápido
-            </button>
-        </div>
-
-        <form data-chat-form action="{{ route('admin.chat') }}" method="POST" class="mt-3 flex flex-col gap-2.5 sm:flex-row">
-            @csrf
-            <input class="field min-w-0 flex-1" name="message" maxlength="500" placeholder="Escribe un comando o consulta para NIA…" required>
-            <button class="btn-primary shrink-0 text-xs" type="submit">
-                <x-icon name="send" class="size-4" />
-                <span>Enviar</span>
-            </button>
-        </form>
-    </section>
 @endsection

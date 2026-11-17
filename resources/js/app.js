@@ -1,4 +1,5 @@
 import './bootstrap';
+import { initNiaChatbot } from './nia-chatbot';
 
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -91,6 +92,13 @@ document.querySelectorAll('[data-countup]').forEach((el) => {
     }
 
     requestAnimationFrame(tick);
+});
+
+document.querySelectorAll('[data-bar-height]').forEach((bar) => {
+    const height = parseFloat(bar.dataset.barHeight || '6');
+    if (!Number.isNaN(height)) {
+        bar.style.height = `${Math.min(100, Math.max(6, height))}%`;
+    }
 });
 
 /* --------------------------------------------------------------------------
@@ -239,65 +247,13 @@ document.querySelectorAll('[data-faq-trigger]').forEach((trigger) => {
 });
 
 /* --------------------------------------------------------------------------
- * 8. NIA Local Assistant Chat Form + Quick Prompts
+ * 8. NIA Local Assistant Floating Widget
  * -------------------------------------------------------------------------- */
-document.querySelectorAll('[data-chat-form]').forEach((form) => {
-    const container = form.closest('[data-chat]');
-    const input = form.querySelector('[name="message"]');
-    const reply = container?.querySelector('[data-chat-reply]');
-    const button = form.querySelector('button[type="submit"]');
-
-    container?.querySelectorAll('[data-chat-prompt]').forEach((chip) => {
-        chip.addEventListener('click', () => {
-            if (!input) return;
-            input.value = chip.dataset.chatPrompt || '';
-            input.focus();
-            if (chip.dataset.autoSubmit === 'true') {
-                form.requestSubmit();
-            }
-        });
-    });
-
-    form.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        if (!input || !reply || !button) return;
-
-        const originalLabel = button.dataset.label || button.textContent;
-        button.dataset.label = originalLabel;
-        button.disabled = true;
-        button.textContent = 'Procesando…';
-        reply.classList.add('ai-thinking');
-
-        try {
-            const response = await fetch(form.action, {
-                method: 'POST',
-                headers: {
-                    Accept: 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
-                },
-                body: new FormData(form),
-            });
-            const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(
-                    result.message ||
-                    Object.values(result.errors || {}).flat()[0] ||
-                    'No se pudo completar la solicitud.'
-                );
-            }
-
-            reply.textContent = result.reply;
-            input.value = '';
-        } catch (error) {
-            reply.textContent = error.message || 'No se pudo conectar con el asistente. Intenta nuevamente.';
-        } finally {
-            reply.classList.remove('ai-thinking');
-            button.disabled = false;
-            button.textContent = originalLabel;
-        }
-    });
-});
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initNiaChatbot);
+} else {
+    initNiaChatbot();
+}
 
 /* --------------------------------------------------------------------------
  * 9. Live Product Pricing Preview Calculator
