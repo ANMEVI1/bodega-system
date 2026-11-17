@@ -40,7 +40,7 @@ class DemoSeeder extends Seeder
 
         $clients = collect([
             ['name' => 'María Elena Quispe', 'phone' => '51945112233', 'email' => 'maria.quispe@correo.pe', 'status' => 'active', 'notes' => 'Compras semanales para su familia los sábados.'],
-            ['name' => 'Restaurante El Mirador', 'phone' => '51988224466', 'email' => 'compras@elmirador.pe', 'status' => 'active', 'notes' => 'Pedido recurrente de abarrotes y aceite.'],
+            ['name' => 'Restaurante El Mirador', 'client_type' => 'business', 'document_type' => 'ruc', 'document_number' => '20123456789', 'contact_name' => 'Jorge Navarro', 'phone' => '51988224466', 'email' => 'compras@elmirador.pe', 'address' => 'Av. Principal 245', 'district' => 'San Isidro', 'city' => 'Lima', 'preferred_contact' => 'whatsapp', 'source' => 'referral', 'status' => 'active', 'notes' => 'Pedido recurrente de abarrotes y aceite.'],
             ['name' => 'Carlos Mendoza', 'phone' => '51912778899', 'email' => null, 'status' => 'follow-up', 'notes' => 'Consulta precios por mayor en lácteos.'],
             ['name' => 'Lucía Paredes', 'phone' => '51965334411', 'email' => 'lucia.p@correo.pe', 'status' => 'active', 'notes' => 'Prefiere entregas rápidas por WhatsApp.'],
         ])->map(fn (array $item) => Client::query()->firstOrCreate(['phone' => $item['phone']], $item));

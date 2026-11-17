@@ -2,7 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Models\Client;
 use App\Models\Product;
+use App\Models\Sale;
 use App\Models\User;
 use Database\Seeders\DemoSeeder;
 use Illuminate\Auth\Notifications\ResetPassword;
@@ -67,6 +69,310 @@ class BodegaFlowsTest extends TestCase
         $this->get(route('admin.categories.index'))->assertOk();
         $this->get(route('admin.inventory.index'))->assertOk();
         $this->get(route('admin.suppliers.create'))->assertOk();
+    }
+
+    public function test_client_form_normalizes_peruvian_mobile_numbers_for_whatsapp(): void
+    {
+        $this->actingAs(User::factory()->create());
+
+        $this->post(route('admin.clients.store'), [
+            'name' => 'Ana Paz',
+            'client_type' => 'person',
+            'document_type' => 'dni',
+            'document_number' => '12345678',
+            'phone' => '912345678',
+            'email' => 'ana@example.test',
+            'preferred_contact' => 'whatsapp',
+            'status' => 'active',
+            'notes' => '',
+        ])->assertRedirect(route('admin.clients.index'));
+
+        $this->assertDatabaseHas('clients', [
+            'name' => 'Ana Paz',
+            'phone' => '51912345678',
+        ]);
+
+        $this->from(route('admin.clients.create'))
+            ->post(route('admin.clients.store'), [
+                'name' => 'Número inválido',
+                'client_type' => 'person',
+                'document_type' => 'dni',
+                'document_number' => '12345678',
+                'phone' => '12345',
+                'preferred_contact' => 'whatsapp',
+                'status' => 'active',
+            ])
+            ->assertRedirect(route('admin.clients.create'))
+            ->assertSessionHasErrors('phone');
+        $this->assertDatabaseCount('clients', 1);
+    }
+
+    public function test_professional_client_fields_are_saved_and_email_contact_requires_email(): void
+    {
+        $this->actingAs(User::factory()->create());
+
+        $this->post(route('admin.clients.store'), [
+            'name' => 'Restaurante El Mirador',
+            'client_type' => 'business',
+            'document_type' => 'ruc',
+            'document_number' => '20123456789',
+            'contact_name' => 'Jorge Navarro',
+            'phone' => '51988224466',
+            'email' => 'compras@example.test',
+            'address' => 'Av. Los Olivos 120',
+            'district' => 'Miraflores',
+            'city' => 'Lima',
+            'preferred_contact' => 'email',
+            'source' => 'referral',
+            'status' => 'active',
+            'notes' => 'Pedido mayorista.',
+        ])->assertRedirect(route('admin.clients.index'));
+
+        $this->assertDatabaseHas('clients', [
+            'name' => 'Restaurante El Mirador',
+            'client_type' => 'business',
+            'document_type' => 'ruc',
+            'document_number' => '20123456789',
+            'contact_name' => 'Jorge Navarro',
+            'district' => 'Miraflores',
+            'city' => 'Lima',
+            'preferred_contact' => 'email',
+            'source' => 'referral',
+        ]);
+
+        $this->from(route('admin.clients.create'))
+            ->post(route('admin.clients.store'), [
+                'name' => 'Cliente sin correo',
+                'client_type' => 'person',
+                'phone' => '51912345678',
+                'preferred_contact' => 'email',
+                'status' => 'active',
+            ])
+            ->assertRedirect(route('admin.clients.create'))
+            ->assertSessionHasErrors('email');
+    }
+
+    public function test_client_form_rejects_non_numeric_phone_and_invalid_dni_before_saving(): void
+    {
+        $this->actingAs(User::factory()->create());
+
+        $clientData = [
+            'name' => 'Cliente de prueba',
+            'client_type' => 'person',
+            'phone' => '91234A678',
+            'preferred_contact' => 'whatsapp',
+            'status' => 'active',
+        ];
+
+        $this->from(route('admin.clients.create'))
+            ->post(route('admin.clients.store'), $clientData)
+            ->assertRedirect(route('admin.clients.create'))
+            ->assertSessionHasErrors('phone');
+        $this->assertDatabaseCount('clients', 0);
+
+        $clientData['phone'] = '912345678';
+        $clientData['document_type'] = 'dni';
+        $clientData['document_number'] = '1234A678';
+
+        $this->from(route('admin.clients.create'))
+            ->post(route('admin.clients.store'), $clientData)
+            ->assertRedirect(route('admin.clients.create'))
+            ->assertSessionHasErrors('document_number');
+        $this->assertDatabaseCount('clients', 0);
+
+        $clientData['document_type'] = 'passport';
+        $clientData['document_number'] = 'A12B345';
+
+        $this->post(route('admin.clients.store'), $clientData)
+            ->assertRedirect(route('admin.clients.index'));
+        $this->assertDatabaseHas('clients', [
+            'name' => 'Cliente de prueba',
+            'document_type' => 'passport',
+            'document_number' => 'A12B345',
+        ]);
+    }
+
+    public function test_client_form_marks_phone_as_numeric_and_validates_format_in_browser(): void
+    {
+        $this->actingAs(User::factory()->create());
+
+        $this->get(route('admin.clients.create'))
+            ->assertOk()
+            ->assertSee('inputmode="numeric"', false)
+            ->assertSee('data-numeric-only="true"', false)
+            ->assertSee('pattern="(9[0-9]{8}|[1-9][0-9]{9,14})"', false)
+            ->assertSee('id="client-document-type" name="document_type" required', false)
+            ->assertSee('id="client-document-number"', false)
+            ->assertSee('· obligatorio', false)
+            ->assertSee('updateDocumentValidation()', false);
+    }
+
+    public function test_client_form_separates_person_and_business_fields_and_document_types(): void
+    {
+        $this->actingAs(User::factory()->create());
+
+        $this->get(route('admin.clients.create'))
+            ->assertOk()
+            ->assertSee('data-client-fields="business"', false)
+            ->assertSee('data-document-for="person"', false)
+            ->assertSee('data-document-for="business"', false)
+            ->assertSee('Razón social', false)
+            ->assertSee('updateClientTypeFields()', false);
+    }
+
+    public function test_client_document_type_must_match_person_or_business(): void
+    {
+        $this->actingAs(User::factory()->create());
+
+        $clientData = [
+            'name' => 'Cliente de prueba',
+            'client_type' => 'business',
+            'document_type' => 'dni',
+            'document_number' => '12345678',
+            'contact_name' => 'Contacto de prueba',
+            'phone' => '912345678',
+            'preferred_contact' => 'whatsapp',
+            'status' => 'active',
+        ];
+
+        $withoutDocument = $clientData;
+        unset($withoutDocument['document_type'], $withoutDocument['document_number']);
+
+        $this->from(route('admin.clients.create'))
+            ->post(route('admin.clients.store'), $withoutDocument)
+            ->assertRedirect(route('admin.clients.create'))
+            ->assertSessionHasErrors(['document_type', 'document_number']);
+        $this->assertDatabaseCount('clients', 0);
+
+        $this->from(route('admin.clients.create'))
+            ->post(route('admin.clients.store'), $clientData)
+            ->assertRedirect(route('admin.clients.create'))
+            ->assertSessionHasErrors('document_type');
+        $this->assertDatabaseCount('clients', 0);
+
+        $clientData['client_type'] = 'person';
+        $clientData['document_type'] = 'ruc';
+        $clientData['document_number'] = '20123456789';
+
+        $this->from(route('admin.clients.create'))
+            ->post(route('admin.clients.store'), $clientData)
+            ->assertRedirect(route('admin.clients.create'))
+            ->assertSessionHasErrors('document_type');
+        $this->assertDatabaseCount('clients', 0);
+
+        $clientData['document_type'] = 'dni';
+        $clientData['document_number'] = '1234567';
+
+        $this->from(route('admin.clients.create'))
+            ->post(route('admin.clients.store'), $clientData)
+            ->assertRedirect(route('admin.clients.create'))
+            ->assertSessionHasErrors('document_number');
+        $this->assertDatabaseCount('clients', 0);
+
+        $clientData['document_number'] = '12345678';
+
+        $this->post(route('admin.clients.store'), $clientData)
+            ->assertRedirect(route('admin.clients.index'));
+        $this->assertDatabaseHas('clients', [
+            'name' => 'Cliente de prueba',
+            'client_type' => 'person',
+            'document_type' => 'dni',
+            'contact_name' => null,
+        ]);
+
+        $clientData['name'] = 'Pasaporte inválido';
+        $clientData['document_type'] = 'passport';
+        $clientData['document_number'] = 'A12-345';
+
+        $this->from(route('admin.clients.create'))
+            ->post(route('admin.clients.store'), $clientData)
+            ->assertRedirect(route('admin.clients.create'))
+            ->assertSessionHasErrors('document_number');
+    }
+
+    public function test_client_profile_shows_consumed_products_and_prefilled_whatsapp_messages(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $client = Client::query()->create([
+            'name' => 'Ana Paz',
+            'phone' => '51912345678',
+            'document_type' => 'dni',
+            'document_number' => '12345678',
+            'contact_name' => 'Ana Paz',
+            'district' => 'Miraflores',
+            'city' => 'Lima',
+            'status' => 'active',
+        ]);
+        $product = Product::query()->create([
+            'name' => 'Arroz',
+            'category' => 'Abarrotes',
+            'unit' => 'kg',
+            'cost' => 3,
+            'selling_price' => 4,
+            'stock' => 10,
+            'low_stock_at' => 2,
+            'active' => true,
+        ]);
+        Sale::query()->create([
+            'reference' => 'NV-CLIENT-1',
+            'client_id' => $client->id,
+            'product_id' => $product->id,
+            'quantity' => 2,
+            'unit_price' => 4,
+            'unit_cost' => 3,
+            'total' => 8,
+            'sold_at' => now()->toDateString(),
+            'status' => 'paid',
+        ]);
+
+        $this->get(route('admin.clients.show', $client))
+            ->assertOk()
+            ->assertSee('DNI 12345678')
+            ->assertSee('Miraflores, Lima')
+            ->assertSee('Productos que consume')
+            ->assertSee('Arroz')
+            ->assertSee('https://wa.me/51912345678?text=Hola%20Ana%20Paz%2C%20te%20escribimos', false)
+            ->assertSee(route('admin.sales.index', ['client_id' => $client->id]), false);
+
+        $this->get(route('admin.sales.index', ['client_id' => $client->id]))
+            ->assertOk()
+            ->assertSee('<option value="'.$client->id.'" selected>', false);
+    }
+
+    public function test_deleting_client_preserves_sales_without_the_client_link(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $client = Client::query()->create([
+            'name' => 'Ana Paz',
+            'phone' => '51912345678',
+            'status' => 'active',
+        ]);
+        $product = Product::query()->create([
+            'name' => 'Arroz',
+            'category' => 'Abarrotes',
+            'unit' => 'kg',
+            'cost' => 3,
+            'selling_price' => 4,
+            'stock' => 10,
+            'low_stock_at' => 2,
+            'active' => true,
+        ]);
+        $sale = Sale::query()->create([
+            'reference' => 'NV-CLIENT-2',
+            'client_id' => $client->id,
+            'product_id' => $product->id,
+            'quantity' => 1,
+            'unit_price' => 4,
+            'unit_cost' => 3,
+            'total' => 4,
+            'sold_at' => now()->toDateString(),
+            'status' => 'paid',
+        ]);
+
+        $this->delete(route('admin.clients.destroy', $client))
+            ->assertRedirect(route('admin.clients.index'));
+
+        $this->assertDatabaseHas('sales', ['id' => $sale->id, 'client_id' => null]);
     }
 
     public function test_sale_is_recorded_and_stock_is_decremented_atomically(): void
