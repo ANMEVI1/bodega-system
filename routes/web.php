@@ -16,6 +16,7 @@ use App\Http\Controllers\SupplierPurchaseController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [SiteController::class, 'home'])->name('home');
+Route::get('/media/sitio/{media}', [SiteController::class, 'media'])->name('site.media');
 Route::post('/contacto', [SiteController::class, 'contact'])->middleware('throttle:5,1')->name('contact.send');
 Route::get('/login', [AuthController::class, 'login'])->name('login');
 Route::get('/setup', [AuthController::class, 'setup'])->name('setup');
@@ -41,6 +42,7 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::post('/compras-proveedor', [SupplierPurchaseController::class, 'store'])->name('purchases.store');
     Route::get('/sitio', [SiteController::class, 'editor'])->name('site.edit');
     Route::put('/sitio', [SiteController::class, 'update'])->name('site.update');
+    Route::delete('/sitio/media/{media}', [SiteController::class, 'destroyMedia'])->name('site.media.destroy');
     Route::get('/consultas', [ContactController::class, 'index'])->name('contacts.index');
     Route::patch('/consultas/{contact}', [ContactController::class, 'update'])->name('contacts.update');
     Route::delete('/consultas/{contact}', [ContactController::class, 'destroy'])->name('contacts.destroy');

@@ -456,3 +456,212 @@ document.querySelectorAll('[data-toast]').forEach((toast) => {
     toast.querySelector('[data-toast-close]')?.addEventListener('click', close);
     setTimeout(close, 5600);
 });
+
+/* --------------------------------------------------------------------------
+ * 14. Public Upper Hero Presentation / Advertising Carousel
+ * -------------------------------------------------------------------------- */
+document.querySelectorAll('[data-promo-carousel]').forEach((carousel) => {
+    const slides = Array.from(carousel.querySelectorAll('[data-promo-slide]'));
+    if (slides.length <= 1) return;
+
+    const dots = Array.from(carousel.querySelectorAll('[data-promo-dot]'));
+    const prevBtn = carousel.querySelector('[data-promo-prev]');
+    const nextBtn = carousel.querySelector('[data-promo-next]');
+    let currentIndex = 0;
+    let timer = null;
+    let isHovered = false;
+
+    const isVideoPlaying = () => {
+        const activeSlide = slides[currentIndex];
+        const video = activeSlide?.querySelector('video');
+        return Boolean(video && !video.paused && !video.ended);
+    };
+
+    const showSlide = (nextIdx) => {
+        const prevVideo = slides[currentIndex]?.querySelector('video');
+        if (prevVideo && !prevVideo.paused) {
+            prevVideo.pause();
+        }
+
+        currentIndex = (nextIdx + slides.length) % slides.length;
+
+        slides.forEach((slide, idx) => {
+            const active = idx === currentIndex;
+            slide.classList.toggle('block', active);
+            slide.classList.toggle('hidden', !active);
+        });
+
+        dots.forEach((dot, idx) => {
+            const active = idx === currentIndex;
+            dot.classList.toggle('w-6', active);
+            dot.classList.toggle('bg-[#D7F0B4]', active);
+            dot.classList.toggle('w-2', !active);
+            dot.classList.toggle('bg-white/40', !active);
+        });
+    };
+
+    const startAuto = () => {
+        if (prefersReducedMotion) return;
+        clearInterval(timer);
+        timer = setInterval(() => {
+            if (!isHovered && !isVideoPlaying()) {
+                showSlide(currentIndex + 1);
+            }
+        }, 6500);
+    };
+
+    prevBtn?.addEventListener('click', () => {
+        showSlide(currentIndex - 1);
+        startAuto();
+    });
+
+    nextBtn?.addEventListener('click', () => {
+        showSlide(currentIndex + 1);
+        startAuto();
+    });
+
+    dots.forEach((dot, idx) => {
+        dot.addEventListener('click', () => {
+            showSlide(idx);
+            startAuto();
+        });
+    });
+
+    carousel.addEventListener('pointerenter', () => {
+        isHovered = true;
+    });
+    carousel.addEventListener('pointerleave', () => {
+        isHovered = false;
+    });
+
+    startAuto();
+});
+
+/* --------------------------------------------------------------------------
+ * 15. Admin Site Media Editor (Local Upload + Web URL Live Previews)
+ * -------------------------------------------------------------------------- */
+function parseEmbedVideoUrl(url) {
+    if (!url) return null;
+    const ytMatch = url.match(/(?:youtube\.com\/(?:watch\?.*v=|shorts\/|embed\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{6,15})/i);
+    if (ytMatch) {
+        return `https://www.youtube.com/embed/${ytMatch[1]}?rel=0&modestbranding=1`;
+    }
+    const vimeoMatch = url.match(/vimeo\.com\/(?:video\/)?(\d+)/i);
+    if (vimeoMatch) {
+        return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
+    }
+    return null;
+}
+
+document.querySelectorAll('[data-toggle-new-media]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+        const drawer = document.getElementById('new-media-drawer');
+        if (!drawer) return;
+        const willOpen = drawer.classList.contains('hidden');
+        drawer.classList.toggle('hidden', !willOpen);
+        drawer.classList.toggle('block', willOpen);
+    });
+});
+
+document.querySelectorAll('[data-media-editor-card]').forEach((card) => {
+    const sourceInput = card.querySelector('[data-source-input]');
+    const sourceTabs = card.querySelectorAll('[data-source-tab]');
+    const sourcePanels = card.querySelectorAll('[data-source-panel]');
+    const fileInput = card.querySelector('[data-media-file-input]');
+    const urlInput = card.querySelector('[data-media-url-input]');
+    const typeSelect = card.querySelector('[data-media-type-select]');
+    const previewImg = card.querySelector('[data-preview-img]');
+    const previewVideo = card.querySelector('[data-preview-video]');
+    const previewIframe = card.querySelector('[data-preview-iframe]');
+    const previewPlaceholder = card.querySelector('[data-preview-placeholder]');
+    const previewStatus = card.querySelector('[data-preview-status]');
+
+    const setPreviewKind = (kind, src) => {
+        previewPlaceholder?.classList.add('hidden');
+
+        if (previewImg) {
+            previewImg.classList.toggle('block', kind === 'image');
+            previewImg.classList.toggle('hidden', kind !== 'image');
+            if (kind === 'image') previewImg.src = src;
+        }
+        if (previewVideo) {
+            previewVideo.classList.toggle('block', kind === 'video');
+            previewVideo.classList.toggle('hidden', kind !== 'video');
+            if (kind === 'video') {
+                previewVideo.src = src;
+                previewVideo.load();
+            } else {
+                previewVideo.pause();
+            }
+        }
+        if (previewIframe) {
+            previewIframe.classList.toggle('block', kind === 'iframe');
+            previewIframe.classList.toggle('hidden', kind !== 'iframe');
+            previewIframe.src = kind === 'iframe' ? src : '';
+        }
+    };
+
+    sourceTabs.forEach((tab) => {
+        tab.addEventListener('click', () => {
+            const target = tab.dataset.sourceTab;
+            if (sourceInput) sourceInput.value = target;
+
+            sourceTabs.forEach((t) => {
+                const active = t === tab;
+                t.classList.toggle('bg-fuchsia-500/25', active);
+                t.classList.toggle('text-white', active);
+                t.classList.toggle('ring-1', active);
+                t.classList.toggle('ring-fuchsia-400/40', active);
+                t.classList.toggle('text-zinc-400', !active);
+            });
+
+            sourcePanels.forEach((panel) => {
+                const match = panel.dataset.sourcePanel === target;
+                panel.classList.toggle('block', match);
+                panel.classList.toggle('hidden', !match);
+            });
+        });
+    });
+
+    fileInput?.addEventListener('change', () => {
+        const file = fileInput.files?.[0];
+        if (!file) return;
+
+        const objectUrl = URL.createObjectURL(file);
+        const isVideo = file.type.startsWith('video/') || /\.(mp4|webm|ogg|mov|m4v)$/i.test(file.name);
+        setPreviewKind(isVideo ? 'video' : 'image', objectUrl);
+
+        if (sourceInput) sourceInput.value = 'upload';
+        if (previewStatus) {
+            const sizeKb = file.size < 1024 * 1024
+                ? `${(file.size / 1024).toFixed(1)} KB`
+                : `${(file.size / (1024 * 1024)).toFixed(2)} MB`;
+            previewStatus.textContent = `${file.name} (${sizeKb}) · Listo para guardar en BD`;
+        }
+    });
+
+    const updateUrlPreview = () => {
+        const rawUrl = (urlInput?.value || '').trim();
+        if (!rawUrl) return;
+
+        if (sourceInput) sourceInput.value = 'url';
+        const embed = parseEmbedVideoUrl(rawUrl);
+        if (embed) {
+            setPreviewKind('iframe', embed);
+            if (previewStatus) previewStatus.textContent = 'Video embebido (YouTube / Vimeo)';
+            return;
+        }
+
+        const forcedType = typeSelect?.value || 'auto';
+        const isDirectVideo = forcedType === 'video' || /\.(mp4|webm|ogg|mov|m4v)(\?.*)?$/i.test(rawUrl);
+
+        setPreviewKind(isDirectVideo ? 'video' : 'image', rawUrl);
+        if (previewStatus) {
+            previewStatus.textContent = isDirectVideo ? 'URL de video directo' : 'URL de imagen web';
+        }
+    };
+
+    urlInput?.addEventListener('input', updateUrlPreview);
+    urlInput?.addEventListener('change', updateUrlPreview);
+    typeSelect?.addEventListener('change', updateUrlPreview);
+});

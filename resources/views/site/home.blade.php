@@ -2,18 +2,118 @@
 @section('content')
     @php
         $hero = $sections['home']->active ? $sections['home'] : $sections['banner'];
+        $promoSection = $sections['promo'] ?? null;
+        $hasPromoStage = ($promoSection?->active ?? true) && isset($promoMedia) && $promoMedia->isNotEmpty();
         $featuredProduct = $products->first();
         $whatsappDigits = $sections['contact']->whatsapp ? preg_replace('/\D+/', '', $sections['contact']->whatsapp) : null;
     @endphp
-    <main class="{{ ($sections['home']->active || $sections['banner']->active) ? '-mt-[74px]' : 'pt-6' }}">
-        {{-- 1. FULL-BLEED BOTANICAL HERO (Wix wh-1241 Composition) --}}
-        @if($sections['home']->active || $sections['banner']->active)
-        <section class="hero-botanical relative isolate overflow-hidden pb-20 pt-32 text-[#FAF8ED] sm:pb-28 sm:pt-36 lg:pb-32 lg:pt-40">
+    <main class="{{ ($hasPromoStage || $sections['home']->active || $sections['banner']->active) ? '-mt-[74px]' : 'pt-6' }}">
+        {{-- 1. FULL-BLEED BOTANICAL HERO (Wix wh-1241 Composition + Upper Advertising/Presentation Stage) --}}
+        @if($hasPromoStage || $sections['home']->active || $sections['banner']->active)
+        <section class="hero-botanical relative isolate overflow-hidden pb-20 pt-28 text-[#FAF8ED] sm:pb-28 sm:pt-32 lg:pb-32 lg:pt-36">
             {{-- Atmospheric soft bokeh & grain --}}
             <div class="cinema-grain absolute inset-0 z-10 opacity-40"></div>
             <div class="ambient-emerald pointer-events-none absolute -right-24 top-10 size-[34rem] rounded-full blur-[120px]"></div>
-            <div class="ambient pointer-events-none -left-32 bottom-0 size-[30rem] rounded-full blur-[120px] opacity-60"></div>
+            <div class="ambient pointer-events-none absolute -left-32 bottom-0 size-[30rem] rounded-full blur-[120px] opacity-60"></div>
 
+            {{-- 1A. UPPER GREEN AREA: PUBLICIDAD Y PRESENTACIÓN MULTIMEDIA (IMAGEN / VIDEO / CARRUSEL) --}}
+            @if($hasPromoStage)
+                <div data-cinema-enter style="--enter-delay: 0" class="relative z-20 mx-auto mb-12 max-w-7xl px-5 sm:mb-16 sm:px-8">
+                    <div data-promo-carousel class="group/promo relative overflow-hidden rounded-[2.2rem] border border-[#FAF8ED]/18 bg-[#121C0E]/90 shadow-[0_28px_70px_-20px_rgba(0,0,0,0.65)] ring-1 ring-[#D7F0B4]/15">
+                        <div class="relative">
+                            @foreach($promoMedia as $slide)
+                                @php
+                                    $mediaSrc = $slide->mediaUrl();
+                                    $embedSrc = $slide->embedUrl();
+                                    $isVideo = $slide->media_type === 'video';
+                                    $fitClass = match ($slide->fit_mode) {
+                                        'contain' => 'max-h-[520px] min-h-[260px] sm:min-h-[380px] object-contain bg-[#0E170B]',
+                                        'auto' => 'h-auto max-h-[620px] object-contain bg-[#0E170B]',
+                                        default => 'h-[280px] sm:h-[400px] lg:h-[470px] object-cover',
+                                    };
+                                    $hasOverlayContent = $slide->show_overlay && ($slide->badge || $slide->title || $slide->subtitle || $slide->cta_label);
+                                @endphp
+                                <div data-promo-slide="{{ $loop->index }}"
+                                     class="{{ $loop->first ? 'block' : 'hidden' }} relative w-full transition-opacity duration-500">
+                                    @if($isVideo && $embedSrc)
+                                        <div class="relative w-full h-[280px] sm:h-[400px] lg:h-[470px] bg-black">
+                                            <iframe src="{{ $embedSrc }}"
+                                                    title="{{ $slide->title ?: 'Presentación en video' }}"
+                                                    class="h-full w-full border-0"
+                                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                                    allowfullscreen></iframe>
+                                        </div>
+                                    @elseif($isVideo && $mediaSrc)
+                                        <video controls playsinline preload="metadata"
+                                               class="block w-full {{ $fitClass }}">
+                                            <source src="{{ $mediaSrc }}" type="{{ $slide->mime_type ?: 'video/mp4' }}">
+                                            Tu navegador no soporta la reproducción de video.
+                                        </video>
+                                    @elseif($mediaSrc)
+                                        <img src="{{ $mediaSrc }}"
+                                             alt="{{ $slide->title ?: ($promoSection->title ?? 'Publicidad Bodega Los Olivos') }}"
+                                             class="block w-full {{ $fitClass }}">
+                                    @endif
+
+                                    @if($hasOverlayContent)
+                                        <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0D150A]/90 via-[#0D150A]/35 to-transparent"></div>
+                                        <div class="pointer-events-none inset-x-0 bottom-0 z-10 flex flex-col justify-end p-6 sm:p-10 lg:p-12 {{ $isVideo ? 'relative bg-[#121C0E]/95 sm:absolute sm:bg-transparent' : 'absolute inset-0' }}">
+                                            <div class="max-w-2xl">
+                                                @if($slide->badge)
+                                                    <span class="inline-flex items-center gap-2 rounded-full border border-[#D7F0B4]/35 bg-[#192613]/85 px-3.5 py-1 text-[10px] font-extrabold uppercase tracking-[.18em] text-[#D7F0B4] backdrop-blur-md">
+                                                        <span class="status-ping size-2 rounded-full bg-[#D7F0B4]"></span>
+                                                        {{ $slide->badge }}
+                                                    </span>
+                                                @endif
+                                                @if($slide->title)
+                                                    <h2 class="font-serif-display mt-3 text-2xl font-black leading-tight text-[#FAF8ED] drop-shadow-md sm:text-4xl lg:text-5xl">
+                                                        {{ $slide->title }}
+                                                    </h2>
+                                                @endif
+                                                @if($slide->subtitle)
+                                                    <p class="mt-2.5 max-w-xl whitespace-pre-line text-xs leading-relaxed text-[#E5E7D7] drop-shadow sm:text-sm lg:text-base">
+                                                        {{ $slide->subtitle }}
+                                                    </p>
+                                                @endif
+                                                @if($slide->cta_label)
+                                                    <div class="pointer-events-auto mt-5 flex flex-wrap items-center gap-3">
+                                                        <a href="{{ $slide->cta_url ?: '#productos' }}" class="btn-matcha text-xs sm:text-sm">
+                                                            <span>{{ $slide->cta_label }}</span>
+                                                            <x-icon name="arrow-right" class="size-4" />
+                                                        </a>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    @endif
+                                </div>
+                            @endforeach
+                        </div>
+
+                        @if($promoMedia->count() > 1)
+                            {{-- Carousel Navigation Controls --}}
+                            <button type="button" data-promo-prev aria-label="Anterior presentación"
+                                    class="absolute left-3.5 top-1/2 z-20 -translate-y-1/2 grid size-10 place-items-center rounded-full border border-white/20 bg-[#162012]/80 text-[#FAF8ED] shadow-lg backdrop-blur-md transition hover:scale-105 hover:bg-[#253017] sm:left-5 sm:size-11">
+                                <x-icon name="chevron-left" class="size-5" />
+                            </button>
+                            <button type="button" data-promo-next aria-label="Siguiente presentación"
+                                    class="absolute right-3.5 top-1/2 z-20 -translate-y-1/2 grid size-10 place-items-center rounded-full border border-white/20 bg-[#162012]/80 text-[#FAF8ED] shadow-lg backdrop-blur-md transition hover:scale-105 hover:bg-[#253017] sm:right-5 sm:size-11">
+                                <x-icon name="chevron-right" class="size-5" />
+                            </button>
+
+                            <div class="absolute bottom-4 right-5 z-20 flex items-center gap-2 rounded-full border border-white/15 bg-[#121C0E]/80 px-3 py-1.5 backdrop-blur-md sm:bottom-6 sm:right-8">
+                                @foreach($promoMedia as $dotSlide)
+                                    <button type="button" data-promo-dot="{{ $loop->index }}"
+                                            aria-label="Ir a diapositiva {{ $loop->iteration }}"
+                                            class="h-2 rounded-full transition-all duration-300 {{ $loop->first ? 'w-6 bg-[#D7F0B4]' : 'w-2 bg-white/40 hover:bg-white/70' }}"></button>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            @endif
+
+            @if($sections['home']->active || $sections['banner']->active)
             <div class="relative z-20 mx-auto grid max-w-7xl items-center gap-12 px-5 sm:px-8 lg:grid-cols-[1.12fr_.88fr]">
                 <div>
                     <div data-cinema-enter style="--enter-delay: 0">
@@ -118,6 +218,7 @@
                     </div>
                 </div>
             </div>
+            @endif
         </section>
         @endif
 
