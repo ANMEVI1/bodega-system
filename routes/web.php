@@ -31,7 +31,7 @@ Route::get('/auth/google/callback', [AuthController::class, 'googleCallback'])->
 Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
-    Route::resource('clientes', ClientController::class)->except('show')->parameters(['clientes' => 'client'])->names('clients');
+    Route::resource('clientes', ClientController::class)->parameters(['clientes' => 'client'])->names('clients');
     Route::resource('productos', ProductController::class)->parameters(['productos' => 'product'])->names('products');
     Route::resource('categorias', CategoryController::class)->except('show')->parameters(['categorias' => 'category'])->names('categories');
     Route::get('/inventario', [InventoryController::class, 'index'])->name('inventory.index');

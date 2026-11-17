@@ -30,7 +30,9 @@
         $navItems = [
             ['route' => 'admin.dashboard', 'label' => 'Inicio', 'icon' => 'home', 'badge' => null],
             ['route' => 'admin.clients.index', 'label' => 'Clientes', 'icon' => 'users', 'badge' => null],
-            ['route' => 'admin.products.index', 'label' => 'Inventario', 'icon' => 'package', 'badge' => ($navLowStock ?? 0) > 0 ? $navLowStock : null],
+            ['route' => 'admin.products.index', 'label' => 'Productos', 'icon' => 'shopping-bag', 'badge' => null],
+            ['route' => 'admin.categories.index', 'label' => 'Categorías', 'icon' => 'tag', 'badge' => null],
+            ['route' => 'admin.inventory.index', 'label' => 'Inventario', 'icon' => 'layers', 'badge' => ($navLowStock ?? 0) > 0 ? $navLowStock : null],
             ['route' => 'admin.suppliers.index', 'label' => 'Proveedores', 'icon' => 'truck', 'badge' => null],
             ['route' => 'admin.sales.index', 'label' => 'Ventas y finanzas', 'icon' => 'trending-up', 'badge' => null],
             ['route' => 'admin.contacts.index', 'label' => 'Consultas web', 'icon' => 'message', 'badge' => ($navNewContacts ?? 0) > 0 ? $navNewContacts : null],
@@ -39,7 +41,7 @@
         $mobileNavItems = [
             ['route' => 'admin.dashboard', 'label' => 'Inicio', 'icon' => 'home'],
             ['route' => 'admin.clients.index', 'label' => 'Clientes', 'icon' => 'users'],
-            ['route' => 'admin.products.index', 'label' => 'Stock', 'icon' => 'package'],
+            ['route' => 'admin.inventory.index', 'label' => 'Stock', 'icon' => 'layers'],
             ['route' => 'admin.sales.index', 'label' => 'Ventas', 'icon' => 'trending-up'],
         ];
     @endphp
