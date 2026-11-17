@@ -51,16 +51,19 @@
                                     </span>
                                     <div>
                                         <p class="font-bold text-white">{{ $client->name }}</p>
-                                        <p class="mt-0.5 text-[11px] text-zinc-500">{{ $client->email ?: 'Sin correo registrado' }}</p>
+                                        <p class="mt-0.5 text-[11px] text-zinc-500">
+                                            {{ $client->client_type === 'business' ? 'Empresa o negocio' : 'Persona' }}
+                                            · {{ $client->email ?: 'Sin correo registrado' }}
+                                        </p>
                                     </div>
                                 </div>
                             </td>
                             <td class="px-4 py-4">
                                 <a class="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 font-mono-num text-[11px] font-semibold text-emerald-200 transition hover:bg-emerald-400/20"
                                    target="_blank" rel="noopener"
-                                   href="https://wa.me/{{ preg_replace('/\D+/', '', $client->phone) }}?text={{ urlencode('Hola '.$client->name.', te escribo de Bodega Los Olivos.') }}">
+                                   href="https://wa.me/{{ $client->whatsappPhone() }}?text={{ rawurlencode('Hola '.$client->name.', te escribimos de Bodega Los Olivos. ¿En qué podemos ayudarte hoy?') }}">
                                     <x-icon name="whatsapp" class="size-3.5" />
-                                    +{{ $client->phone }}
+                                    +{{ $client->whatsappPhone() }}
                                 </a>
                             </td>
                             <td class="px-4 py-4">
@@ -75,12 +78,15 @@
                             </td>
                             <td class="px-6 py-4">
                                 <div class="flex justify-end gap-2">
+                                    <a href="{{ route('admin.clients.show', $client) }}" class="btn-subtle px-3 py-1.5 text-[11px]">
+                                        Ver ficha
+                                    </a>
                                     <a href="{{ route('admin.clients.edit', $client) }}" class="btn-subtle px-3 py-1.5 text-[11px]">
                                         <x-icon name="edit" class="size-3.5" />
                                         Editar
                                     </a>
                                     <form method="POST" action="{{ route('admin.clients.destroy', $client) }}"
-                                          data-confirm="¿Seguro que deseas eliminar a «{{ $client->name }}» de tu cartera?">
+                                          data-confirm="¿Seguro que deseas eliminar a «{{ $client->name }}»? Las ventas se conservarán, pero quedarán sin cliente asociado.">
                                         @csrf @method('DELETE')
                                         <button class="inline-flex items-center gap-1 rounded-xl border border-rose-400/15 bg-rose-500/[.06] px-3 py-1.5 text-[11px] font-bold text-rose-200 transition hover:bg-rose-500/15">
                                             <x-icon name="trash" class="size-3.5" />

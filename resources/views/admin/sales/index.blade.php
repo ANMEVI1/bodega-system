@@ -72,7 +72,7 @@
                 <select class="field mt-2" name="client_id">
                     <option value="">Venta al público</option>
                     @foreach($clients as $client)
-                        <option value="{{ $client->id }}" @selected((string) old('client_id') === (string) $client->id)>{{ $client->name }}</option>
+                        <option value="{{ $client->id }}" @selected((string) old('client_id', request('client_id')) === (string) $client->id)>{{ $client->name }}</option>
                     @endforeach
                 </select>
             </label>

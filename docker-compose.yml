@@ -1,0 +1,35 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - .:/var/www/html
+      - bodega_vendor:/var/www/html/vendor
+      - bodega_storage:/var/www/html/storage
+      - ./.env.example:/var/www/html/.env:ro
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: http://localhost:8000
+      DB_CONNECTION: sqlite
+      DB_DATABASE: /var/www/html/storage/app/bodega.sqlite
+      CACHE_STORE: file
+      SESSION_DRIVER: file
+      QUEUE_CONNECTION: sync
+      MAIL_MAILER: log
+
+  assets:
+    image: node:22-alpine
+    working_dir: /var/www/html
+    volumes:
+      - .:/var/www/html
+      - bodega_node_modules:/var/www/html/node_modules
+    command: sh -c "npm ci && npm run build"
+
+volumes:
+  bodega_node_modules:
+  bodega_storage:
+  bodega_vendor:
