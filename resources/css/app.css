@@ -847,6 +847,59 @@ body.site-editorial > footer {
     will-change: transform;
 }
 
+.bodega-canvas-3d {
+    cursor: grab;
+    opacity: 0;
+}
+
+.bodega-canvas-3d.is-ready {
+    opacity: 1;
+}
+
+.bodega-canvas-3d.is-dragging {
+    cursor: grabbing;
+}
+
+.bodega-stage-media.is-hidden-3d {
+    opacity: 0;
+    pointer-events: none;
+    animation: none !important;
+}
+
+body.is-3d-expanded {
+    overflow: hidden;
+}
+
+body.is-3d-expanded > .site-backdrop-layer,
+body.is-3d-expanded > header,
+body.is-3d-expanded > footer,
+body.is-3d-expanded .site-cb-root,
+body.is-3d-expanded > main > section:not([data-hero-scene]) {
+    visibility: hidden;
+    pointer-events: none;
+}
+
+body.is-3d-expanded > main {
+    z-index: 70;
+}
+
+.bodega-stage-expanded {
+    position: fixed !important;
+    inset: 1rem !important;
+    z-index: 65 !important;
+    display: flex;
+    flex-direction: column;
+    max-width: none !important;
+    box-shadow: 0 28px 80px rgba(0, 0, 0, 0.55);
+    contain: layout size style;
+}
+
+.bodega-stage-expanded [data-bodega-viewport] {
+    flex: 1 1 auto;
+    aspect-ratio: auto !important;
+    min-height: 260px;
+}
+
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
         scroll-behavior: auto !important;

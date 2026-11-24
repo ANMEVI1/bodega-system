@@ -186,6 +186,19 @@ document.querySelectorAll('[data-bodega-stage]').forEach((stageEl) => {
     const hintLabel = stageEl.querySelector('[data-bodega-hint]');
     if (!viewport || !media) return;
 
+    const is3dReady = () => stageEl.dataset.mode3d === 'ready';
+
+    // Code-split Three.js loader only on pages containing the bodega stage
+    if (viewport.dataset.modelUrl) {
+        import('./bodega-3d')
+            .then(({ initBodega3DViewer }) => {
+                initBodega3DViewer(stageEl, { prefersReducedMotion });
+            })
+            .catch(() => {
+                stageEl.querySelector('[data-bodega-loading]')?.classList.add('hidden');
+            });
+    }
+
     const presets = {
         general: { x: 0, y: 0, scale: 1.14, hint: 'Mueve o arrastra la escena' },
         estantes: { x: 8.5, y: 1.2, scale: 1.28, hint: 'Estantería y granos andinos' },
@@ -223,6 +236,7 @@ document.querySelectorAll('[data-bodega-stage]').forEach((stageEl) => {
     };
 
     const goToPreset = (key) => {
+        if (is3dReady()) return;
         const preset = presets[key] || presets.general;
         activeFocus = key;
         panX = preset.x;
@@ -236,6 +250,7 @@ document.querySelectorAll('[data-bodega-stage]').forEach((stageEl) => {
 
     focusBtns.forEach((btn) => {
         btn.addEventListener('click', (e) => {
+            if (is3dReady()) return;
             e.stopPropagation();
             goToPreset(btn.dataset.bodegaFocus || 'general');
         });
@@ -243,7 +258,7 @@ document.querySelectorAll('[data-bodega-stage]').forEach((stageEl) => {
 
     if (!prefersReducedMotion) {
         viewport.addEventListener('pointerdown', (e) => {
-            if (e.target.closest('button')) return;
+            if (is3dReady() || e.target.closest('button')) return;
             isDragging = true;
             dragStartX = e.clientX;
             dragStartY = e.clientY;
@@ -255,6 +270,7 @@ document.querySelectorAll('[data-bodega-stage]').forEach((stageEl) => {
         });
 
         viewport.addEventListener('pointermove', (e) => {
+            if (is3dReady()) return;
             const rect = viewport.getBoundingClientRect();
             if (isDragging) {
                 const dxPct = ((e.clientX - dragStartX) / Math.max(rect.width, 1)) * 22;
@@ -289,6 +305,7 @@ document.querySelectorAll('[data-bodega-stage]').forEach((stageEl) => {
         viewport.addEventListener('pointercancel', endDrag);
 
         viewport.addEventListener('pointerleave', () => {
+            if (is3dReady()) return;
             viewport.classList.remove('is-pointer-active');
             if (!isDragging && activeFocus === 'general') {
                 goToPreset('general');
@@ -296,7 +313,7 @@ document.querySelectorAll('[data-bodega-stage]').forEach((stageEl) => {
         });
 
         viewport.addEventListener('dblclick', (e) => {
-            if (e.target.closest('button')) return;
+            if (is3dReady() || e.target.closest('button')) return;
             goToPreset('general');
         });
     }

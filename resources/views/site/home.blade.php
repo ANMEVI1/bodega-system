@@ -80,20 +80,67 @@
                 </div>
 
                 @if($bannerSection->active)
-                {{-- Columna derecha: Fotografía viva de bodega peruana sin etiquetas encima --}}
-                <figure data-cinema-enter style="--enter-delay: 2" data-bodega-stage class="border border-[#192315]/18 bg-[#FAF7EF]">
-                    <div data-bodega-viewport class="bodega-viewport relative aspect-[5/4] w-full overflow-hidden bg-[#192315] sm:aspect-[16/12]">
+                @php
+                    $catalogPreviewPayload = $products->map(function ($p) {
+                        $low = (float) $p->stock <= (float) $p->low_stock_at;
+                        return [
+                            'name' => $p->name,
+                            'category' => $p->category ?: 'Despensa',
+                            'unit' => $p->unit ?: 'unidad',
+                            'price_formatted' => 'S/ '.number_format((float) $p->selling_price, 2),
+                            'status_label' => $low ? 'Últimas unidades' : 'En stock',
+                            'low_stock' => $low,
+                        ];
+                    })->values()->all();
+                @endphp
+                {{-- Columna derecha: Escena 3D interactiva (bodega-3d.glb + Three.js + respaldo fotográfico; sin filter blur activo para 60fps en modo expandido) --}}
+                <figure data-bodega-stage class="relative border border-[#192315]/18 bg-[#FAF7EF]">
+                    <div
+                        data-bodega-viewport
+                        data-model-url="{{ asset('models/bodega-3d.glb') }}"
+                        data-bodega-catalog="{{ json_encode($catalogPreviewPayload) }}"
+                        class="bodega-viewport relative aspect-[5/4] w-full overflow-hidden bg-[#192315] sm:aspect-[16/12]"
+                    >
                         <img
                             src="{{ asset('images/bodega-peru.jpg') }}"
                             alt="Interior de bodega peruana moderna con abarrotes, granos andinos, frutas frescas y pan del día"
                             draggable="false"
                             data-bodega-img
-                            class="bodega-stage-media is-idle h-full w-full select-none object-cover"
+                            class="bodega-stage-media is-idle h-full w-full select-none object-cover transition-opacity duration-500"
                         >
+                        <canvas
+                            data-bodega-canvas
+                            class="bodega-canvas-3d absolute inset-0 h-full w-full touch-none opacity-0 transition-opacity duration-500"
+                            aria-label="Recorrido interactivo 3D por la bodega"
+                        ></canvas>
+
+                        {{-- Estado discreto de carga 3D & expand (sin backdrop-blur sobre WebGL para 60fps estables) --}}
+                        <div class="pointer-events-none absolute inset-x-3 top-3 z-20 flex items-center justify-between gap-2">
+                            <span data-bodega-loading class="inline-flex items-center gap-1.5 rounded-[2px] border border-[#FAF7EF]/25 bg-[#192315]/92 px-2.5 py-1 text-[10px] font-semibold text-[#F4EFE4]">
+                                <span class="size-1.5 animate-pulse rounded-full bg-[#D8B49A]"></span>
+                                Cargando recorrido 3D…
+                            </span>
+                            <span data-bodega-hover-tip class="hidden rounded-[2px] border border-[#192315]/25 bg-[#FAF7EF] px-2.5 py-1 text-[11px] font-semibold text-[#192315] shadow-md"></span>
+                            <button
+                                type="button"
+                                data-bodega-expand
+                                aria-pressed="false"
+                                title="Ampliar visor 3D"
+                                aria-label="Ampliar o contraer visor 3D"
+                                class="pointer-events-auto ml-auto inline-flex size-8 items-center justify-center rounded-[2px] border border-[#FAF7EF]/30 bg-[#192315]/90 text-[#F4EFE4] transition-colors hover:bg-[#192315]"
+                            >
+                                <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" x2="14" y1="3" y2="10"/><line x1="3" x2="10" y1="21" y2="14"/>
+                                </svg>
+                            </button>
+                        </div>
+
+                        {{-- Ficha flotante al hacer clic en un objeto 3D con Raycaster --}}
+                        <div data-bodega-inspector class="pointer-events-none absolute inset-x-3 bottom-3 z-20 hidden max-w-sm"></div>
                         <div class="pointer-events-none absolute inset-0 ring-1 ring-inset ring-black/10"></div>
                     </div>
 
-                    {{-- Pie de fotografía + selector de zonas fuera de la imagen --}}
+                    {{-- Pie de escena + selector directo de cámaras fuera del encuadre --}}
                     <figcaption class="border-t border-[#192315]/14 bg-[#FAF7EF] px-4 py-3.5 sm:px-5">
                         <div class="flex flex-wrap items-center justify-between gap-2">
                             <span class="font-editorial text-base font-medium text-[#192315]">
@@ -112,7 +159,7 @@
                         @endif
 
                         <div class="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-[#192315]/10 pt-2.5">
-                            <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5" role="group" aria-label="Explorar zonas de la bodega">
+                            <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5" role="group" aria-label="Explorar zonas 3D de la bodega">
                                 @foreach([
                                     ['general', '00 General', true],
                                     ['estantes', '01 Estantes', false],
