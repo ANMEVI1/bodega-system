@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import './nia-chatbot.css';
+@import './site-chatbot.css';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
@@ -30,9 +31,31 @@
     }
 
     body.site-editorial {
-        background: #FAF7EE;
-        color: #253017;
+        --site-paper: oklch(0.953 0.016 86);
+        --site-linen: oklch(0.916 0.021 86);
+        --site-sheet: oklch(0.974 0.011 88);
+        --site-ink: oklch(0.242 0.028 136);
+        --site-forest: oklch(0.32 0.045 140);
+        --site-sage: oklch(0.49 0.044 134);
+        --site-terracotta: oklch(0.515 0.128 38);
+        --site-muted: oklch(0.45 0.018 88);
+        --site-rule: rgba(25, 35, 21, 0.14);
+        --font-editorial: 'Newsreader', Georgia, serif;
+        background: var(--site-paper);
+        color: var(--site-ink);
         color-scheme: light;
+    }
+
+    body.site-editorial h1,
+    body.site-editorial h2,
+    body.site-editorial h3,
+    body.site-editorial p {
+        text-wrap: pretty;
+    }
+
+    body.site-editorial :focus-visible {
+        outline: 2px solid var(--site-terracotta);
+        outline-offset: 3px;
     }
 
     body.admin-cinema {
@@ -626,12 +649,269 @@ html.js-cinema [data-reveal].is-revealed {
     will-change: transform;
 }
 
+/* --------------------------------------------------------------------------
+ * Peruvian Bodega Editorial System (Monocle + Aesop Inspired)
+ * -------------------------------------------------------------------------- */
+.font-editorial {
+    font-family: var(--font-editorial, 'Newsreader', Georgia, serif);
+    font-optical-sizing: auto;
+}
+
+body.site-editorial > header,
+body.site-editorial > main,
+body.site-editorial > footer {
+    position: relative;
+}
+
+body.site-editorial > main,
+body.site-editorial > footer {
+    z-index: 10;
+}
+
+.site-backdrop-layer {
+    z-index: 0;
+    background:
+        radial-gradient(ellipse 85% 50% at 15% 12%, rgba(94, 109, 81, 0.08), transparent 55%),
+        radial-gradient(ellipse 75% 45% at 88% 42%, rgba(164, 74, 40, 0.05), transparent 52%),
+        var(--site-paper, #F4EFE4);
+}
+
+.site-grid-editorial {
+    background-image:
+        linear-gradient(to right, rgba(25, 35, 21, 0.032) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(25, 35, 21, 0.032) 1px, transparent 1px);
+    background-size: 72px 72px;
+    mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.65) 0%, transparent 92%);
+    -webkit-mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.65) 0%, transparent 92%);
+}
+
+.editorial-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    min-height: 44px;
+    border-radius: 2px;
+    border: 1px solid var(--site-ink, #192315);
+    background: var(--site-ink, #192315);
+    padding: 0.78rem 1.45rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--site-paper, #F4EFE4);
+    transition: background-color 0.25s var(--ease-silk), border-color 0.25s ease, transform 0.25s var(--ease-silk);
+}
+
+.editorial-btn-primary:hover {
+    background: var(--site-forest, #263822);
+    border-color: var(--site-forest, #263822);
+    transform: translateY(-1px);
+}
+
+.editorial-btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    min-height: 44px;
+    border-radius: 2px;
+    border: 1px solid rgba(25, 35, 21, 0.28);
+    background: transparent;
+    padding: 0.78rem 1.35rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--site-ink, #192315);
+    transition: border-color 0.25s ease, background-color 0.25s ease, color 0.25s ease;
+}
+
+.editorial-btn-secondary:hover {
+    border-color: var(--site-ink, #192315);
+    background: rgba(25, 35, 21, 0.045);
+}
+
+.editorial-field {
+    width: 100%;
+    border: 1px solid rgba(25, 35, 21, 0.22);
+    border-radius: 2px;
+    background: #FFFFFF;
+    padding: 0.75rem 0.9rem;
+    font-size: 0.875rem;
+    color: var(--site-ink, #192315);
+    outline: none;
+    transition: border-color 0.22s ease, background-color 0.22s ease;
+}
+
+.editorial-field::placeholder {
+    color: rgba(89, 85, 72, 0.55);
+}
+
+.editorial-field:focus {
+    border-color: var(--site-ink, #192315);
+    box-shadow: 0 0 0 2px rgba(164, 74, 40, 0.18);
+}
+
+/* Bodega Interactive Photography Frame & Caption Tabs */
+[data-bodega-focus] {
+    border-bottom: 2px solid transparent;
+    color: var(--site-muted, #595548);
+    transition: color 0.22s ease, border-color 0.22s ease, background-color 0.22s ease;
+}
+
+[data-bodega-focus]:hover {
+    color: var(--site-ink, #192315);
+}
+
+[data-bodega-focus][aria-pressed="true"] {
+    border-bottom-color: var(--site-terracotta, #A44A28);
+    color: var(--site-ink, #192315);
+}
+
+[data-category-filter] {
+    min-height: 38px;
+    border-radius: 2px;
+    border: 1px solid rgba(25, 35, 21, 0.2);
+    background: transparent;
+    color: var(--site-muted, #595548);
+    transition: background-color 0.22s ease, border-color 0.22s ease, color 0.22s ease;
+}
+
+[data-category-filter]:hover {
+    border-color: var(--site-ink, #192315);
+    color: var(--site-ink, #192315);
+}
+
+[data-category-filter][aria-pressed="true"] {
+    border-color: var(--site-ink, #192315);
+    background: var(--site-ink, #192315);
+    color: var(--site-paper, #F4EFE4);
+}
+
+@keyframes heroKenBurns {
+    0% {
+        transform: translate3d(var(--bg-px, -1%), var(--bg-py, -0.5%), 0) scale(1.05);
+    }
+    50% {
+        transform: translate3d(calc(var(--bg-px, 0%) + 1.2%), calc(var(--bg-py, 0%) + 0.8%), 0) scale(1.11);
+    }
+    100% {
+        transform: translate3d(calc(var(--bg-px, 0%) - 0.8%), calc(var(--bg-py, 0%) + 1%), 0) scale(1.07);
+    }
+}
+
+.hero-bodega-media {
+    animation: heroKenBurns 26s ease-in-out infinite alternate;
+    will-change: transform;
+    filter: saturate(0.95) contrast(1.04);
+}
+
+@keyframes bodegaGentlePan {
+    0% {
+        transform: translate3d(-2%, 0%, 0) scale(1.12);
+    }
+    50% {
+        transform: translate3d(2%, -1.2%, 0) scale(1.16);
+    }
+    100% {
+        transform: translate3d(-1.2%, 1.4%, 0) scale(1.13);
+    }
+}
+
+.bodega-viewport {
+    touch-action: pan-y;
+    cursor: grab;
+}
+
+.bodega-viewport.is-dragging {
+    cursor: grabbing;
+}
+
+.bodega-stage-media {
+    transform: translate3d(var(--pan-x, 0%), var(--pan-y, 0%), 0) scale(var(--pan-scale, 1.12));
+    transition: transform 0.75s var(--ease-cinema);
+    will-change: transform;
+    transform-origin: center center;
+}
+
+.bodega-stage-media.is-idle {
+    animation: bodegaGentlePan 20s ease-in-out infinite alternate;
+}
+
+.bodega-viewport.is-dragging .bodega-stage-media,
+.bodega-viewport.is-pointer-active .bodega-stage-media {
+    transition: transform 0.14s ease-out;
+}
+
+.bodega-hud-float {
+    transform: translate3d(var(--hud-x, 0px), var(--hud-y, 0px), 0);
+    transition: transform 0.35s ease-out;
+    will-change: transform;
+}
+
+.bodega-canvas-3d {
+    cursor: grab;
+    opacity: 0;
+}
+
+.bodega-canvas-3d.is-ready {
+    opacity: 1;
+}
+
+.bodega-canvas-3d.is-dragging {
+    cursor: grabbing;
+}
+
+.bodega-stage-media.is-hidden-3d {
+    opacity: 0;
+    pointer-events: none;
+    animation: none !important;
+}
+
+body.is-3d-expanded {
+    overflow: hidden;
+}
+
+body.is-3d-expanded > .site-backdrop-layer,
+body.is-3d-expanded > header,
+body.is-3d-expanded > footer,
+body.is-3d-expanded .site-cb-root,
+body.is-3d-expanded > main > section:not([data-hero-scene]) {
+    visibility: hidden;
+    pointer-events: none;
+}
+
+body.is-3d-expanded > main {
+    z-index: 70;
+}
+
+.bodega-stage-expanded {
+    position: fixed !important;
+    inset: 1rem !important;
+    z-index: 65 !important;
+    display: flex;
+    flex-direction: column;
+    max-width: none !important;
+    box-shadow: 0 28px 80px rgba(0, 0, 0, 0.55);
+    contain: layout size style;
+}
+
+.bodega-stage-expanded [data-bodega-viewport] {
+    flex: 1 1 auto;
+    aspect-ratio: auto !important;
+    min-height: 260px;
+}
+
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
         scroll-behavior: auto !important;
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
+    }
+
+    .hero-bodega-media,
+    .bodega-stage-media.is-idle {
+        animation: none !important;
+        transform: none !important;
     }
 
     html.js-cinema [data-reveal] {
@@ -647,7 +927,7 @@ html.js-cinema [data-reveal].is-revealed {
         color: #111 !important;
     }
 
-    .cinema-grid, .cinema-grain, .ambient, .ambient-amber, .ambient-emerald {
+    .cinema-grid, .cinema-grain, .ambient, .ambient-amber, .ambient-emerald, .site-backdrop-layer {
         display: none !important;
     }
 

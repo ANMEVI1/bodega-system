@@ -1,456 +1,554 @@
 @extends('layouts.admin')
 @section('title', 'Editar página web')
-@section('heading', 'Editor de página web')
+@section('heading', 'Editor dinámico de página web')
 @section('content')
+    @php
+        $sectionMeta = [
+            'home' => [
+                'badge' => 'Portada izquierda',
+                'label' => 'Portada principal',
+                'target' => 'Encabezado gigante (H1), subtítulo, botón principal y su destino en /',
+                'preview' => 'hero',
+            ],
+            'banner' => [
+                'badge' => 'Lámina derecha',
+                'label' => 'Vitrina y lámina fotográfica',
+                'target' => 'Pie editorial bajo la foto interactiva (o portada de respaldo si ocultas Portada)',
+                'preview' => 'hero',
+            ],
+            'about' => [
+                'badge' => 'Sección #nosotros',
+                'label' => 'Sobre nosotros',
+                'target' => 'Relato e identidad de la bodega en la web pública',
+                'preview' => 'about',
+            ],
+            'faq' => [
+                'badge' => 'Sección #preguntas',
+                'label' => 'Preguntas frecuentes',
+                'target' => 'Acordeón desplegable automático en formato ¿Pregunta? Respuesta',
+                'preview' => 'faq',
+            ],
+            'contact' => [
+                'badge' => 'Sección #contacto + Barra',
+                'label' => 'Contacto y WhatsApp',
+                'target' => 'Bloque final, botón de formulario, barra superior y redirección WhatsApp',
+                'preview' => 'contact',
+            ],
+        ];
+        $activeCount = $sections->filter(fn ($s) => (bool) old("sections.{$s->section}.active", $s->active))->count();
+        $initialWhatsapp = old('sections.contact.whatsapp', $sections['contact']->whatsapp);
+        $initialWhatsappDigits = $initialWhatsapp ? preg_replace('/\D+/', '', (string) $initialWhatsapp) : '';
+    @endphp
+
     <div data-cinema-enter class="flex flex-wrap items-end justify-between gap-4">
         <div>
-            <p class="text-xs font-bold uppercase tracking-[.18em] text-fuchsia-300/90">Presencia digital</p>
-            <h1 class="mt-1 text-2xl font-extrabold tracking-tight text-white">Tu página, a tu manera</h1>
-            <p class="mt-1 text-xs text-zinc-400">Actualiza publicidad multimedia (imágenes o videos en base de datos o URL), textos, botones y WhatsApp de tu vitrina pública.</p>
+            <p class="text-xs font-bold uppercase tracking-[.18em] text-fuchsia-300/90">Presencia digital sincronizada</p>
+            <h1 class="mt-1 text-2xl font-extrabold tracking-tight text-white sm:text-3xl">Tu vitrina pública en vivo</h1>
+            <p class="mt-1 text-xs text-zinc-400">Edita cada bloque de la web principal, controla su visibilidad y valida en tiempo real cómo se ve antes de guardar.</p>
         </div>
-        <a target="_blank" href="{{ route('home') }}" class="btn-subtle text-xs">
-            <x-icon name="store" class="size-4 text-amber-300" />
-            <span>Abrir sitio público</span>
-            <x-icon name="arrow-up-right" class="size-3.5" />
-        </a>
+
+        <div class="flex flex-wrap items-center gap-2.5">
+            <a href="{{ route('admin.contacts.index') }}" class="btn-subtle text-xs">
+                <x-icon name="message" class="size-4 text-fuchsia-300" />
+                <span>Consultas web ({{ $contactStats['total'] }})</span>
+                @if($contactStats['new'] > 0)
+                    <span class="rounded-full bg-fuchsia-500/25 px-2 py-0.5 text-[10px] font-extrabold text-fuchsia-200">{{ $contactStats['new'] }} nuevas</span>
+                @endif
+            </a>
+            <a href="{{ route('admin.products.index') }}" class="btn-subtle text-xs">
+                <x-icon name="shopping-bag" class="size-4 text-emerald-300" />
+                <span>Productos públicos ({{ $publicProducts->count() }})</span>
+            </a>
+            <a target="_blank" rel="noopener noreferrer" href="{{ route('home') }}" class="btn-subtle text-xs">
+                <x-icon name="store" class="size-4 text-amber-300" />
+                <span>Abrir sitio público</span>
+                <x-icon name="arrow-up-right" class="size-3.5" />
+            </a>
+        </div>
     </div>
 
-    @if($errors->any())
-        <div role="alert" class="mt-5 rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-xs font-semibold text-rose-200">
-            <div class="flex items-center gap-2">
-                <x-icon name="alert-triangle" class="size-4 text-rose-400" />
-                <span>Por favor verifica los datos ingresados: {{ $errors->first() }}</span>
+    {{-- KPIs de sincronización real con el Home --}}
+    <div class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div class="panel spotlight-card rounded-3xl p-5">
+            <div class="flex items-center justify-between">
+                <p class="text-[11px] font-bold uppercase tracking-[.14em] text-zinc-400">Bloques visibles</p>
+                <span class="grid size-8 place-items-center rounded-xl bg-fuchsia-500/15 text-fuchsia-300">
+                    <x-icon name="globe" class="size-4" />
+                </span>
             </div>
+            <p class="font-mono-num mt-3 text-2xl font-black text-white">
+                <span data-preview-active-count>{{ $activeCount }}</span> / {{ $sections->count() }}
+            </p>
+            <p class="mt-1 text-[11px] text-zinc-400">Secciones activas en la portada</p>
         </div>
-    @endif
 
-    <form method="POST" action="{{ route('admin.site.update') }}" enctype="multipart/form-data" class="mt-6 space-y-6">
-        @csrf @method('PUT')
+        <div class="panel spotlight-card rounded-3xl p-5">
+            <div class="flex items-center justify-between">
+                <p class="text-[11px] font-bold uppercase tracking-[.14em] text-zinc-400">Catálogo automático</p>
+                <span class="grid size-8 place-items-center rounded-xl bg-emerald-500/15 text-emerald-300">
+                    <x-icon name="package" class="size-4" />
+                </span>
+            </div>
+            <p class="font-mono-num mt-3 text-2xl font-black text-white">{{ $publicProducts->count() }}</p>
+            <p class="mt-1 text-[11px] text-zinc-400">
+                {{ $publicCategories->count() }} {{ $publicCategories->count() === 1 ? 'categoría visible' : 'categorías visibles' }} desde Productos
+            </p>
+        </div>
 
-        @php
-            $promoSection = $sections['promo'] ?? null;
-        @endphp
+        <div class="panel spotlight-card rounded-3xl p-5">
+            <div class="flex items-center justify-between">
+                <p class="text-[11px] font-bold uppercase tracking-[.14em] text-zinc-400">Destacado del día</p>
+                <span class="grid size-8 place-items-center rounded-xl bg-amber-500/15 text-amber-300">
+                    <x-icon name="sparkles" class="size-4" />
+                </span>
+            </div>
+            @if($featuredProduct)
+                <p class="mt-3 truncate text-base font-extrabold text-white">{{ $featuredProduct->name }}</p>
+                <p class="font-mono-num mt-1 text-xs font-bold text-amber-300">S/ {{ number_format((float) $featuredProduct->selling_price, 2) }} · Automático en portada</p>
+            @else
+                <p class="mt-3 text-base font-bold text-zinc-300">Sin artículos públicos</p>
+                <p class="mt-1 text-[11px] text-zinc-400">Marca un producto como público con stock</p>
+            @endif
+        </div>
 
-        {{-- =======================================================================
-             1. APARTADO DE PUBLICIDAD Y PRESENTACIÓN MULTIMEDIA (ZONA SUPERIOR VERDE)
-             ======================================================================= --}}
-        @if($promoSection)
-            <section data-reveal class="panel spotlight-card rounded-3xl border border-emerald-400/20 p-6 sm:p-7">
-                <input type="hidden" name="sections[promo][title]" value="{{ old('sections.promo.title', $promoSection->title ?: 'Promociones y presentación de temporada') }}">
-                <input type="hidden" name="sections[promo][content]" value="{{ old('sections.promo.content', $promoSection->content) }}">
+        <div class="panel spotlight-card rounded-3xl p-5">
+            <div class="flex items-center justify-between">
+                <p class="text-[11px] font-bold uppercase tracking-[.14em] text-zinc-400">Canal WhatsApp</p>
+                <span class="grid size-8 place-items-center rounded-xl bg-emerald-500/15 text-emerald-300">
+                    <x-icon name="whatsapp" class="size-4" />
+                </span>
+            </div>
+            <p data-preview-wa-badge class="font-mono-num mt-3 truncate text-base font-extrabold {{ strlen($initialWhatsappDigits) >= 8 ? 'text-emerald-300' : 'text-amber-300' }}">
+                {{ strlen($initialWhatsappDigits) >= 8 ? '+'.$initialWhatsappDigits : 'Sin configurar' }}
+            </p>
+            <p class="mt-1 text-[11px] text-zinc-400">Barra superior y redirección del formulario</p>
+        </div>
+    </div>
 
-                <div class="flex flex-wrap items-start justify-between gap-4 border-b border-white/[.08] pb-5">
-                    <div>
-                        <div class="flex flex-wrap items-center gap-2">
-                            <span class="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-[10px] font-extrabold uppercase tracking-[.2em] text-emerald-300">
-                                <x-icon name="sparkles" class="size-3.5" />
-                                Espacio Superior Verde · Publicidad y Presentación
-                            </span>
-                            <span class="inline-flex items-center gap-1.5 rounded-full border border-fuchsia-400/25 bg-fuchsia-400/10 px-3 py-1 text-[10px] font-bold text-fuchsia-200">
-                                <x-icon name="database" class="size-3.5 text-fuchsia-300" />
-                                Guardado en Base de Datos (Portátil entre equipos)
-                            </span>
-                        </div>
-                        <h2 class="mt-2.5 text-xl font-extrabold text-white">Publicidad, Banner o Presentación Multimedia (Imagen / Video)</h2>
-                        <p class="mt-1 max-w-3xl text-xs leading-relaxed text-zinc-400">
-                            Personaliza el apartado superior verde de la portada pública. Puedes subir archivos locales desde tu computadora (se almacenan directamente en la base de datos para que carguen en cualquier otra laptop sin perderse) o pegar una URL web de imagen, video MP4 o YouTube/Vimeo.
-                        </p>
-                    </div>
+    <div data-site-editor data-defaults="{{ json_encode($defaults) }}" class="mt-6 grid items-start gap-6 xl:grid-cols-[1.08fr_.92fr]">
+        {{-- COLUMNA IZQUIERDA: FORMULARIO ESTRUCTURADO POR SECCIONES --}}
+        <form id="site-editor-form" method="POST" action="{{ route('admin.site.update') }}" class="space-y-4">
+            @csrf @method('PUT')
 
-                    <label class="inline-flex cursor-pointer items-center gap-2.5 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-4 py-2 text-xs font-bold text-emerald-200 transition hover:border-emerald-400/45">
-                        <input type="hidden" name="sections[promo][active]" value="0">
-                        <input class="size-4 rounded accent-emerald-400" type="checkbox" name="sections[promo][active]" value="1" @checked(old('sections.promo.active', $promoSection->active))>
-                        Visible en el sitio
-                    </label>
-                </div>
-
-                {{-- Lista de Anuncios / Diapositivas Actuales --}}
-                <div class="mt-6 space-y-6">
-                    @foreach($promoMedia as $item)
-                        @php
-                            $itemSource = old("media_items.{$item->id}.source_type", $item->source_type ?: 'upload');
-                            $previewUrl = $item->mediaUrl();
-                            $embedUrl = $item->embedUrl();
-                            $hasDbData = $item->hasDatabaseBinary();
-                        @endphp
-                        <div data-media-editor-card class="rounded-2xl border border-white/10 bg-white/[.025] p-5 transition hover:border-white/20">
-                            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-white/[.06] pb-3.5">
-                                <div class="flex flex-wrap items-center gap-2.5">
-                                    <span class="font-mono-num inline-flex items-center rounded-lg bg-fuchsia-500/20 px-2.5 py-1 text-xs font-extrabold text-fuchsia-300">
-                                        #{{ str_pad((string) $loop->iteration, 2, '0', STR_PAD_LEFT) }}
-                                    </span>
-                                    <h3 class="text-sm font-extrabold text-white">
-                                        {{ $item->title ?: 'Anuncio / Presentación Principal' }}
-                                    </h3>
-                                    @if($hasDbData)
-                                        <span class="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2.5 py-0.5 text-[10px] font-bold text-emerald-300">
-                                            <x-icon name="database" class="size-3" />
-                                            Almacenado en BD {{ $item->formattedSize() ? '· '.$item->formattedSize() : '' }}
-                                        </span>
-                                    @endif
-                                    @if($item->source_type === 'url')
-                                        <span class="inline-flex items-center gap-1 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-2.5 py-0.5 text-[10px] font-bold text-cyan-300">
-                                            <x-icon name="link" class="size-3" />
-                                            URL Web
-                                        </span>
-                                    @endif
-                                </div>
-
-                                <div class="flex flex-wrap items-center gap-3">
-                                    <label class="inline-flex cursor-pointer items-center gap-2 rounded-full border border-white/10 bg-white/[.04] px-3 py-1.5 text-[11px] font-semibold text-zinc-300">
-                                        <input type="hidden" name="media_items[{{ $item->id }}][active]" value="0">
-                                        <input type="checkbox" class="size-3.5 rounded accent-fuchsia-500" name="media_items[{{ $item->id }}][active]" value="1" @checked(old("media_items.{$item->id}.active", $item->active))>
-                                        Activo
-                                    </label>
-
-                                    @if($promoMedia->count() > 1)
-                                        <label class="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-rose-500/25 bg-rose-500/10 px-3 py-1.5 text-[11px] font-semibold text-rose-300 transition hover:bg-rose-500/20">
-                                            <input type="checkbox" class="size-3.5 rounded accent-rose-500" name="media_items[{{ $item->id }}][delete]" value="1">
-                                            <x-icon name="trash" class="size-3.5" />
-                                            Eliminar al guardar
-                                        </label>
-                                    @endif
-                                </div>
-                            </div>
-
-                            <div class="mt-5 grid gap-6 lg:grid-cols-[.95fr_1.05fr]">
-                                {{-- Columna Izquierda: Vista Previa en Vivo + Selección de Origen (Local / URL) --}}
-                                <div class="space-y-4">
-                                    <div class="overflow-hidden rounded-2xl border border-white/15 bg-black/50">
-                                        <div class="flex items-center justify-between border-b border-white/10 bg-white/[.03] px-3.5 py-2 text-[11px] font-bold text-zinc-400">
-                                            <span class="flex items-center gap-1.5">
-                                                <x-icon :name="$item->media_type === 'video' ? 'video' : 'image'" class="size-3.5 text-fuchsia-300" />
-                                                Vista previa del espacio verde
-                                            </span>
-                                            <span data-preview-status class="text-[10px] font-semibold text-emerald-300">
-                                                {{ $item->file_name ?: ($item->source_type === 'url' ? 'Enlace externo' : 'Listo') }}
-                                            </span>
-                                        </div>
-
-                                        <div class="relative flex min-h-[210px] items-center justify-center bg-[#121C0E]">
-                                            <img data-preview-img
-                                                 src="{{ $item->media_type === 'image' ? $previewUrl : '' }}"
-                                                 alt="Vista previa"
-                                                 class="{{ $item->media_type === 'image' && $previewUrl ? 'block' : 'hidden' }} max-h-[250px] w-full object-contain">
-
-                                            <video data-preview-video controls playsinline
-                                                   src="{{ ($item->media_type === 'video' && ! $embedUrl) ? $previewUrl : '' }}"
-                                                   class="{{ ($item->media_type === 'video' && ! $embedUrl && $previewUrl) ? 'block' : 'hidden' }} max-h-[250px] w-full object-contain"></video>
-
-                                            <iframe data-preview-iframe
-                                                    src="{{ ($item->media_type === 'video' && $embedUrl) ? $embedUrl : '' }}"
-                                                    title="Vista previa de video"
-                                                    class="{{ ($item->media_type === 'video' && $embedUrl) ? 'block' : 'hidden' }} h-[230px] w-full border-0"
-                                                    allowfullscreen></iframe>
-                                        </div>
-                                    </div>
-
-                                    {{-- Selector de Modo: Subida Local vs URL Web --}}
-                                    <div>
-                                        <input type="hidden" data-source-input name="media_items[{{ $item->id }}][source_type]" value="{{ $itemSource }}">
-                                        <div class="grid grid-cols-2 gap-2 rounded-xl border border-white/10 bg-black/30 p-1">
-                                            <button type="button" data-source-tab="upload"
-                                                    class="flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-bold transition {{ $itemSource === 'upload' ? 'bg-fuchsia-500/25 text-white ring-1 ring-fuchsia-400/40' : 'text-zinc-400 hover:text-white' }}">
-                                                <x-icon name="upload" class="size-3.5" />
-                                                <span>Subir archivo local</span>
-                                            </button>
-                                            <button type="button" data-source-tab="url"
-                                                    class="flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-bold transition {{ $itemSource === 'url' ? 'bg-fuchsia-500/25 text-white ring-1 ring-fuchsia-400/40' : 'text-zinc-400 hover:text-white' }}">
-                                                <x-icon name="link" class="size-3.5" />
-                                                <span>Usar URL web</span>
-                                            </button>
-                                        </div>
-
-                                        {{-- Panel Subida Local --}}
-                                        <div data-source-panel="upload" class="{{ $itemSource === 'upload' ? 'block' : 'hidden' }} mt-3">
-                                            <label class="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-fuchsia-400/30 bg-fuchsia-500/[.05] px-4 py-5 text-center transition hover:border-fuchsia-400/60 hover:bg-fuchsia-500/[.09]">
-                                                <x-icon name="upload" class="size-6 text-fuchsia-300" />
-                                                <span class="mt-2 text-xs font-extrabold text-white">Haz clic para elegir otra imagen o video de tu computadora</span>
-                                                <span class="mt-1 text-[11px] text-zinc-400">Soporta JPG, PNG, WEBP, GIF, SVG, AVIF y videos MP4, WEBM, MOV (se guarda en la Base de Datos)</span>
-                                                <input type="file"
-                                                       data-media-file-input
-                                                       name="media_items[{{ $item->id }}][file]"
-                                                       accept="image/*,video/mp4,video/webm,video/ogg,video/quicktime"
-                                                       class="mt-3 block w-full text-xs text-zinc-300 file:mr-3 file:rounded-full file:border-0 file:bg-fuchsia-500/20 file:px-3.5 file:py-1.5 file:text-xs file:font-bold file:text-fuchsia-200 hover:file:bg-fuchsia-500/30">
-                                            </label>
-                                        </div>
-
-                                        {{-- Panel URL Web --}}
-                                        <div data-source-panel="url" class="{{ $itemSource === 'url' ? 'block' : 'hidden' }} mt-3">
-                                            <label class="block text-xs font-bold text-zinc-300">
-                                                Enlace URL de la imagen o video (web directa, YouTube o Vimeo)
-                                                <input type="url"
-                                                       data-media-url-input
-                                                       name="media_items[{{ $item->id }}][external_url]"
-                                                       value="{{ old("media_items.{$item->id}.external_url", $item->external_url) }}"
-                                                       placeholder="https://ejemplo.com/publicidad.jpg o https://www.youtube.com/watch?v=..."
-                                                       class="field mt-2 text-xs">
-                                            </label>
-                                            <p class="mt-1.5 text-[11px] text-zinc-400">
-                                                Si pegas el enlace de una imagen web, el sistema también guarda una copia de respaldo en la base de datos automáticamente.
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {{-- Columna Derecha: Configuración Visual, Textos y Botón del Anuncio --}}
-                                <div class="grid content-start gap-3.5 sm:grid-cols-2">
-                                    <label class="text-xs font-bold text-zinc-300">
-                                        Tipo de archivo
-                                        <select name="media_items[{{ $item->id }}][media_type]" data-media-type-select class="field mt-1.5 text-xs">
-                                            <option value="auto">Automático (Detectar imagen o video)</option>
-                                            <option value="image" @selected(old("media_items.{$item->id}.media_type", $item->media_type) === 'image')>Imagen (Banner / Afiche / Foto)</option>
-                                            <option value="video" @selected(old("media_items.{$item->id}.media_type", $item->media_type) === 'video')>Video (MP4 / WebM / YouTube)</option>
-                                        </select>
-                                    </label>
-
-                                    <label class="text-xs font-bold text-zinc-300">
-                                        Ajuste en el espacio verde
-                                        <select name="media_items[{{ $item->id }}][fit_mode]" class="field mt-1.5 text-xs">
-                                            <option value="cover" @selected(old("media_items.{$item->id}.fit_mode", $item->fit_mode) === 'cover')>Panorámico (Llenar todo el espacio)</option>
-                                            <option value="contain" @selected(old("media_items.{$item->id}.fit_mode", $item->fit_mode) === 'contain')>Completo sin recortar (Flyer / Póster)</option>
-                                            <option value="auto" @selected(old("media_items.{$item->id}.fit_mode", $item->fit_mode) === 'auto')>Adaptable a su proporción original</option>
-                                        </select>
-                                    </label>
-
-                                    <div class="sm:col-span-2">
-                                        <label class="inline-flex cursor-pointer items-center gap-2.5 rounded-xl border border-white/10 bg-white/[.03] px-3.5 py-2 text-xs font-semibold text-zinc-200">
-                                            <input type="hidden" name="media_items[{{ $item->id }}][show_overlay]" value="0">
-                                            <input type="checkbox" class="size-4 rounded accent-fuchsia-500" name="media_items[{{ $item->id }}][show_overlay]" value="1" @checked(old("media_items.{$item->id}.show_overlay", $item->show_overlay))>
-                                            <span>Mostrar textos y botón encima de la imagen/video (desmarca si tu imagen ya tiene diseño propio)</span>
-                                        </label>
-                                    </div>
-
-                                    <label class="text-xs font-bold text-zinc-300">
-                                        Etiqueta superior (opcional)
-                                        <input class="field mt-1.5 text-xs" name="media_items[{{ $item->id }}][badge]" value="{{ old("media_items.{$item->id}.badge", $item->badge) }}" maxlength="80" placeholder="Ej. OFERTA DE LA SEMANA">
-                                    </label>
-
-                                    <label class="text-xs font-bold text-zinc-300">
-                                        Título en presentación (opcional)
-                                        <input class="field mt-1.5 text-xs" name="media_items[{{ $item->id }}][title]" value="{{ old("media_items.{$item->id}.title", $item->title) }}" maxlength="160" placeholder="Ej. Promociones frescas todos los días">
-                                    </label>
-
-                                    <label class="text-xs font-bold text-zinc-300 sm:col-span-2">
-                                        Descripción o mensaje publicitario (opcional)
-                                        <textarea class="field mt-1.5 min-h-20 text-xs" name="media_items[{{ $item->id }}][subtitle]" maxlength="1000" placeholder="Texto breve que acompaña tu imagen o video…">{{ old("media_items.{$item->id}.subtitle", $item->subtitle) }}</textarea>
-                                    </label>
-
-                                    <label class="text-xs font-bold text-zinc-300">
-                                        Texto del botón (opcional)
-                                        <input class="field mt-1.5 text-xs" name="media_items[{{ $item->id }}][cta_label]" value="{{ old("media_items.{$item->id}.cta_label", $item->cta_label) }}" maxlength="80" placeholder="Ej. Ver ofertas">
-                                    </label>
-
-                                    <label class="text-xs font-bold text-zinc-300">
-                                        Enlace del botón (opcional)
-                                        <input class="field mt-1.5 text-xs" name="media_items[{{ $item->id }}][cta_url]" value="{{ old("media_items.{$item->id}.cta_url", $item->cta_url) }}" maxlength="255" placeholder="#productos o https://wa.me/...">
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
+            {{-- Barra de filtro rápido de secciones + estado de cambios --}}
+            <div class="panel flex flex-wrap items-center justify-between gap-3 rounded-2xl px-4 py-3">
+                <div class="flex flex-wrap items-center gap-1.5" role="tablist" aria-label="Filtrar bloque editorial">
+                    <button type="button" data-section-tab="all" aria-selected="true"
+                        class="rounded-full border border-fuchsia-400/40 bg-fuchsia-500/20 px-3 py-1.5 text-[11px] font-bold text-fuchsia-100 transition">
+                        Todos (5)
+                    </button>
+                    @foreach($sections as $key => $section)
+                        @php $meta = $sectionMeta[$key] ?? ['label' => $key]; @endphp
+                        <button type="button" data-section-tab="{{ $key }}" aria-selected="false"
+                            class="rounded-full border border-white/10 bg-white/[.03] px-3 py-1.5 text-[11px] font-semibold text-zinc-400 transition hover:border-white/25 hover:text-zinc-200">
+                            {{ $meta['label'] }}
+                        </button>
                     @endforeach
                 </div>
 
-                {{-- Botón y Panel para Agregar Nueva Diapositiva / Imagen / Video Adicional --}}
-                <div class="mt-6 rounded-2xl border border-dashed border-fuchsia-400/30 bg-fuchsia-500/[.03] p-5" data-media-editor-card>
-                    <div class="flex flex-wrap items-center justify-between gap-3">
-                        <div class="flex items-center gap-2.5">
-                            <span class="grid size-9 place-items-center rounded-xl bg-fuchsia-500/20 text-fuchsia-300">
-                                <x-icon name="plus" class="size-4" />
-                            </span>
+                <span data-editor-dirty-badge class="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[.03] px-3 py-1 text-[11px] font-semibold text-zinc-400">
+                    <span class="size-1.5 rounded-full bg-emerald-400" data-dirty-dot></span>
+                    <span data-dirty-text>Sincronizado</span>
+                </span>
+            </div>
+
+            <div class="flex items-center justify-between gap-3 rounded-2xl border border-emerald-400/15 bg-emerald-500/[.04] px-4 py-2.5 text-[11px] text-emerald-200">
+                <div class="flex items-center gap-2">
+                    <x-icon name="sparkles" class="size-4 shrink-0 text-emerald-300" />
+                    <span><strong>Chatbot de tienda sincronizado:</strong> el asistente público de <code class="text-emerald-100">/</code> usa automáticamente estos textos, preguntas frecuentes y tu catálogo público sin exponer datos internos.</span>
+                </div>
+            </div>
+
+            @foreach($sections as $key => $section)
+                @php
+                    $meta = $sectionMeta[$key] ?? ['badge' => $key, 'label' => $key, 'target' => '', 'preview' => 'hero'];
+                    $isActive = (bool) old("sections.$key.active", $section->active);
+                    $titleValue = old("sections.$key.title", $section->title);
+                    $contentValue = old("sections.$key.content", $section->content);
+                    $ctaLabelValue = old("sections.$key.cta_label", $section->cta_label);
+                    $ctaUrlValue = old("sections.$key.cta_url", $section->cta_url);
+                @endphp
+
+                <section data-section-card="{{ $key }}" data-preview-jump="{{ $meta['preview'] }}"
+                    class="panel spotlight-card rounded-3xl p-5 transition sm:p-6">
+                    <div class="flex flex-wrap items-start justify-between gap-3 border-b border-white/[.07] pb-4">
+                        <div class="min-w-0 flex-1">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <span class="rounded-full border border-fuchsia-400/25 bg-fuchsia-500/12 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-[.16em] text-fuchsia-200">
+                                    {{ $meta['badge'] }}
+                                </span>
+                                <span class="text-[11px] font-medium text-zinc-400">{{ $meta['target'] }}</span>
+                            </div>
+                            <h2 class="mt-2 text-lg font-extrabold text-white">{{ $meta['label'] }}</h2>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <button type="button" data-reset-section="{{ $key }}"
+                                class="rounded-full border border-white/10 bg-white/[.03] px-3 py-1.5 text-[11px] font-semibold text-zinc-400 transition hover:border-white/25 hover:text-zinc-100"
+                                title="Restaurar texto sugerido para este bloque">
+                                Restaurar
+                            </button>
+
+                            <label class="inline-flex cursor-pointer items-center gap-2.5 rounded-full border border-white/12 bg-white/[.04] px-3 py-1.5 text-xs font-semibold text-zinc-200 transition hover:border-white/25">
+                                <input type="hidden" name="sections[{{ $key }}][active]" value="0">
+                                <input
+                                    type="checkbox"
+                                    name="sections[{{ $key }}][active]"
+                                    value="1"
+                                    data-section-input="{{ $key }}"
+                                    data-field-role="active"
+                                    class="peer sr-only"
+                                    @checked($isActive)
+                                >
+                                <span class="relative inline-flex h-5 w-9 shrink-0 rounded-full bg-zinc-700 transition peer-checked:bg-emerald-500 after:absolute after:left-0.5 after:top-0.5 after:size-4 after:rounded-full after:bg-white after:transition-all peer-checked:after:translate-x-4"></span>
+                                <span data-visibility-label="{{ $key }}" class="{{ $isActive ? 'text-emerald-300' : 'text-zinc-400' }}">
+                                    {{ $isActive ? 'Visible en el sitio' : 'Oculto' }}
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mt-5 grid gap-4">
+                        <div>
+                            <div class="flex items-center justify-between gap-2">
+                                <label for="section-{{ $key }}-title" class="text-xs font-bold text-zinc-300">Título del bloque</label>
+                                <span class="font-mono-num text-[10px] text-zinc-500" data-char-count="section-{{ $key }}-title">{{ mb_strlen((string) $titleValue) }}/160</span>
+                            </div>
+                            <input
+                                id="section-{{ $key }}-title"
+                                class="field mt-1.5"
+                                name="sections[{{ $key }}][title]"
+                                value="{{ $titleValue }}"
+                                maxlength="160"
+                                data-section-input="{{ $key }}"
+                                data-field-role="title"
+                                data-char-target="section-{{ $key }}-title"
+                                required
+                            >
+                        </div>
+
+                        @if($key === 'faq')
+                            {{-- Constructor visual estructurado para Preguntas Frecuentes --}}
                             <div>
-                                <h3 class="text-sm font-extrabold text-white">Agregar nueva imagen o video (o reemplazar rápido)</h3>
-                                <p class="text-[11px] text-zinc-400">Añade más diapositivas para crear un carrusel de presentación o reemplaza el anuncio principal.</p>
-                            </div>
-                        </div>
-                        <button type="button" data-toggle-new-media
-                                class="btn-subtle text-xs">
-                            <x-icon name="plus" class="size-3.5 text-fuchsia-300" />
-                            <span>Desplegar cargador multimedia</span>
-                        </button>
-                    </div>
-
-                    <div id="new-media-drawer" class="{{ $promoMedia->isEmpty() ? 'block' : 'hidden' }} mt-5 border-t border-white/10 pt-5">
-                        <div class="grid gap-6 lg:grid-cols-[.95fr_1.05fr]">
-                            <div class="space-y-4">
-                                <div class="overflow-hidden rounded-2xl border border-white/15 bg-black/50">
-                                    <div class="flex items-center justify-between border-b border-white/10 bg-white/[.03] px-3.5 py-2 text-[11px] font-bold text-zinc-400">
-                                        <span>Vista previa del nuevo archivo / enlace</span>
-                                        <span data-preview-status class="text-[10px] font-semibold text-fuchsia-300">Esperando selección…</span>
+                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                    <div>
+                                        <span class="text-xs font-bold text-zinc-300">Preguntas y respuestas interactivas</span>
+                                        <p class="text-[11px] text-zinc-400">Cada fila crea un desplegable ordenado en la sección Preguntas frecuentes del sitio.</p>
                                     </div>
-                                    <div class="relative flex min-h-[190px] items-center justify-center bg-[#121C0E] p-3">
-                                        <p data-preview-placeholder class="text-center text-xs text-zinc-500">
-                                            Selecciona una imagen/video local o pega una URL para previsualizar aquí antes de guardar.
-                                        </p>
-                                        <img data-preview-img src="" alt="Previsualización nueva" class="hidden max-h-[230px] w-full object-contain">
-                                        <video data-preview-video controls playsinline class="hidden max-h-[230px] w-full object-contain"></video>
-                                        <iframe data-preview-iframe title="Previsualización de video" class="hidden h-[220px] w-full border-0" allowfullscreen></iframe>
+                                    <div class="flex items-center gap-2">
+                                        <button type="button" data-faq-toggle-raw class="rounded-full border border-white/10 bg-white/[.03] px-3 py-1 text-[11px] font-semibold text-zinc-400 transition hover:border-white/25 hover:text-zinc-100">
+                                            Modo texto
+                                        </button>
+                                        <button type="button" data-faq-add class="inline-flex items-center gap-1 rounded-full border border-fuchsia-400/35 bg-fuchsia-500/15 px-3 py-1 text-[11px] font-bold text-fuchsia-200 transition hover:bg-fuchsia-500/25">
+                                            <x-icon name="plus" class="size-3.5" />
+                                            <span>Agregar pregunta</span>
+                                        </button>
                                     </div>
                                 </div>
 
-                                <input type="hidden" data-source-input name="new_media[source_type]" value="upload">
-                                <div class="grid grid-cols-2 gap-2 rounded-xl border border-white/10 bg-black/30 p-1">
-                                    <button type="button" data-source-tab="upload"
-                                            class="flex items-center justify-center gap-2 rounded-lg bg-fuchsia-500/25 px-3 py-2 text-xs font-bold text-white ring-1 ring-fuchsia-400/40 transition">
-                                        <x-icon name="upload" class="size-3.5" />
-                                        <span>Subida local (BD)</span>
-                                    </button>
-                                    <button type="button" data-source-tab="url"
-                                            class="flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-bold text-zinc-400 transition hover:text-white">
-                                        <x-icon name="link" class="size-3.5" />
-                                        <span>Por URL web</span>
-                                    </button>
-                                </div>
+                                <div data-faq-builder class="mt-3 space-y-2.5"></div>
 
-                                <div data-source-panel="upload" class="block">
-                                    <label class="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-emerald-400/35 bg-emerald-500/[.05] px-4 py-4 text-center transition hover:border-emerald-400/60">
-                                        <x-icon name="upload" class="size-5 text-emerald-300" />
-                                        <span class="mt-1.5 text-xs font-extrabold text-white">Seleccionar imagen o video desde tu equipo</span>
-                                        <input type="file"
-                                               data-media-file-input
-                                               name="new_media[file]"
-                                               accept="image/*,video/mp4,video/webm,video/ogg,video/quicktime"
-                                               class="mt-2.5 block w-full text-xs text-zinc-300 file:mr-3 file:rounded-full file:border-0 file:bg-emerald-500/20 file:px-3.5 file:py-1.5 file:text-xs file:font-bold file:text-emerald-200">
-                                    </label>
-                                </div>
-
-                                <div data-source-panel="url" class="hidden">
-                                    <label class="block text-xs font-bold text-zinc-300">
-                                        URL de la imagen o video (enlace directo, YouTube o Vimeo)
-                                        <input type="url"
-                                               data-media-url-input
-                                               name="new_media[external_url]"
-                                               placeholder="https://..."
-                                               class="field mt-1.5 text-xs">
-                                    </label>
+                                <div data-faq-raw-wrap class="mt-3 hidden">
+                                    <textarea
+                                        id="section-faq-content"
+                                        class="field min-h-32 font-mono text-xs leading-6"
+                                        name="sections[faq][content]"
+                                        maxlength="4000"
+                                        data-section-input="faq"
+                                        data-field-role="content"
+                                        placeholder="¿Cuál es su horario? Atendemos todos los días de 7:00 a.m. a 10:00 p.m."
+                                    >{{ $contentValue }}</textarea>
+                                    <p class="mt-1.5 text-[11px] text-zinc-500">Formato: una pregunta por línea terminada en signo de cierre <code class="text-zinc-300">?</code> seguida de su respuesta.</p>
                                 </div>
                             </div>
+                        @else
+                            <div>
+                                <div class="flex items-center justify-between gap-2">
+                                    <label for="section-{{ $key }}-content" class="text-xs font-bold text-zinc-300">Texto descriptivo</label>
+                                    <span class="font-mono-num text-[10px] text-zinc-500" data-char-count="section-{{ $key }}-content">{{ mb_strlen((string) $contentValue) }}/4000</span>
+                                </div>
+                                <textarea
+                                    id="section-{{ $key }}-content"
+                                    class="field mt-1.5 min-h-24"
+                                    name="sections[{{ $key }}][content]"
+                                    maxlength="4000"
+                                    data-section-input="{{ $key }}"
+                                    data-field-role="content"
+                                    data-char-target="section-{{ $key }}-content"
+                                >{{ $contentValue }}</textarea>
+                            </div>
+                        @endif
 
-                            <div class="grid content-start gap-3.5 sm:grid-cols-2">
-                                <label class="text-xs font-bold text-zinc-300">
-                                    ¿Cómo deseas aplicarlo?
-                                    <select name="new_media[action_mode]" class="field mt-1.5 text-xs">
-                                        <option value="append">Agregar como nueva diapositiva (Presentación)</option>
-                                        <option value="replace_first">Reemplazar el anuncio principal (#01)</option>
-                                    </select>
-                                </label>
-
-                                <label class="text-xs font-bold text-zinc-300">
-                                    Ajuste en el espacio verde
-                                    <select name="new_media[fit_mode]" class="field mt-1.5 text-xs">
-                                        <option value="cover">Panorámico (Llenar todo el espacio)</option>
-                                        <option value="contain">Completo sin recortar (Flyer / Póster)</option>
-                                        <option value="auto">Adaptable a su proporción original</option>
-                                    </select>
-                                </label>
-
-                                <input type="hidden" name="new_media[media_type]" value="auto">
-
-                                <div class="sm:col-span-2">
-                                    <label class="inline-flex cursor-pointer items-center gap-2.5 rounded-xl border border-white/10 bg-white/[.03] px-3.5 py-2 text-xs font-semibold text-zinc-200">
-                                        <input type="hidden" name="new_media[show_overlay]" value="0">
-                                        <input type="checkbox" class="size-4 rounded accent-fuchsia-500" name="new_media[show_overlay]" value="1" checked>
-                                        <span>Mostrar textos y botón sobre este anuncio</span>
+                        @if(in_array($key, ['home', 'banner', 'contact'], true))
+                            <div class="grid gap-4 sm:grid-cols-2">
+                                <div>
+                                    <label for="section-{{ $key }}-cta-label" class="text-xs font-bold text-zinc-300">
+                                        {{ $key === 'contact' ? 'Texto del botón de envío' : ($key === 'banner' ? 'Enlace opcional en la lámina' : 'Texto del botón principal') }}
                                     </label>
+                                    <input
+                                        id="section-{{ $key }}-cta-label"
+                                        class="field mt-1.5"
+                                        name="sections[{{ $key }}][cta_label]"
+                                        value="{{ $ctaLabelValue }}"
+                                        maxlength="80"
+                                        data-section-input="{{ $key }}"
+                                        data-field-role="cta_label"
+                                        placeholder="{{ $key === 'contact' ? 'Enviar consulta' : 'Explorar catálogo' }}"
+                                    >
                                 </div>
 
-                                <label class="text-xs font-bold text-zinc-300">
-                                    Etiqueta superior (opcional)
-                                    <input class="field mt-1.5 text-xs" name="new_media[badge]" maxlength="80" placeholder="Ej. PROMOCIÓN ESPECIAL">
-                                </label>
-
-                                <label class="text-xs font-bold text-zinc-300">
-                                    Título (opcional)
-                                    <input class="field mt-1.5 text-xs" name="new_media[title]" maxlength="160" placeholder="Título para la presentación">
-                                </label>
-
-                                <label class="text-xs font-bold text-zinc-300 sm:col-span-2">
-                                    Descripción breve (opcional)
-                                    <textarea class="field mt-1.5 min-h-16 text-xs" name="new_media[subtitle]" maxlength="1000" placeholder="Descripción opcional…"></textarea>
-                                </label>
-
-                                <label class="text-xs font-bold text-zinc-300">
-                                    Texto del botón (opcional)
-                                    <input class="field mt-1.5 text-xs" name="new_media[cta_label]" maxlength="80" placeholder="Ej. Pedir por WhatsApp">
-                                </label>
-
-                                <label class="text-xs font-bold text-zinc-300">
-                                    Enlace del botón (opcional)
-                                    <input class="field mt-1.5 text-xs" name="new_media[cta_url]" maxlength="255" placeholder="#productos o https://...">
-                                </label>
+                                @if(in_array($key, ['home', 'banner'], true))
+                                    <div>
+                                        <label for="section-{{ $key }}-cta-url" class="text-xs font-bold text-zinc-300">Destino al hacer clic</label>
+                                        <input
+                                            id="section-{{ $key }}-cta-url"
+                                            class="field font-mono-num mt-1.5 text-xs"
+                                            type="text"
+                                            name="sections[{{ $key }}][cta_url]"
+                                            value="{{ $ctaUrlValue }}"
+                                            maxlength="255"
+                                            data-section-input="{{ $key }}"
+                                            data-field-role="cta_url"
+                                            placeholder="#productos o https://…"
+                                        >
+                                        <div class="mt-2 flex flex-wrap gap-1.5">
+                                            @foreach([
+                                                ['#productos', 'Catálogo'],
+                                                ['#contacto', 'Contacto'],
+                                                ['#nosotros', 'Nosotros'],
+                                                ['#preguntas', 'Preguntas'],
+                                            ] as [$presetUrl, $presetLabel])
+                                                <button type="button" data-cta-preset="{{ $presetUrl }}" data-cta-target="section-{{ $key }}-cta-url"
+                                                    class="rounded-full border border-white/10 bg-white/[.03] px-2.5 py-0.5 text-[10px] font-semibold text-zinc-400 transition hover:border-fuchsia-400/40 hover:text-fuchsia-200">
+                                                    {{ $presetLabel }}
+                                                </button>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endif
                             </div>
-                        </div>
+                        @endif
+
+                        @if($key === 'contact')
+                            <div class="rounded-2xl border border-emerald-400/15 bg-emerald-500/[.04] p-4">
+                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                    <label for="section-contact-whatsapp" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-200">
+                                        <x-icon name="whatsapp" class="size-4 text-emerald-400" />
+                                        <span>WhatsApp del negocio (código de país + número)</span>
+                                    </label>
+                                    <a
+                                        href="{{ strlen($initialWhatsappDigits) >= 8 ? 'https://wa.me/'.$initialWhatsappDigits : '#' }}"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        data-wa-test-link
+                                        class="inline-flex items-center gap-1 rounded-full border border-emerald-400/25 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold text-emerald-200 transition hover:bg-emerald-500/20 {{ strlen($initialWhatsappDigits) >= 8 ? '' : 'pointer-events-none opacity-40' }}"
+                                    >
+                                        <span>Probar enlace wa.me</span>
+                                        <x-icon name="arrow-up-right" class="size-3" />
+                                    </a>
+                                </div>
+
+                                <input
+                                    id="section-contact-whatsapp"
+                                    class="field font-mono-num mt-2"
+                                    name="sections[contact][whatsapp]"
+                                    value="{{ $initialWhatsapp }}"
+                                    maxlength="32"
+                                    inputmode="tel"
+                                    data-section-input="contact"
+                                    data-field-role="whatsapp"
+                                    placeholder="51987654321 (o +51 987 654 321)"
+                                >
+                                <p data-wa-helper class="mt-2 text-[11px] leading-5 text-zinc-400">
+                                    Conecta directamente el botón <strong class="text-zinc-200">WhatsApp</strong> de la barra superior, el bloque de contacto y la redirección automática tras enviar una consulta. Si lo dejas vacío, el formulario solo registra la consulta en el panel.
+                                </p>
+                            </div>
+                        @endif
                     </div>
+                </section>
+            @endforeach
+
+            <div class="sticky bottom-20 z-20 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#0b0b12]/92 px-4 py-3 shadow-2xl shadow-black/70 backdrop-blur-xl lg:bottom-5">
+                <p class="text-xs text-zinc-400">
+                    Los cambios se aplican al instante en <span class="font-mono-num text-zinc-200">/</span> al guardar.
+                </p>
+                <button type="submit" class="btn-primary">
+                    <x-icon name="check-circle" class="size-4" />
+                    <span>Guardar cambios del sitio</span>
+                </button>
+            </div>
+        </form>
+
+        {{-- COLUMNA DERECHA: VISTA PREVIA DINÁMICA EN VIVO --}}
+        <aside class="panel overflow-hidden rounded-3xl xl:sticky xl:top-20" aria-label="Vista previa en tiempo real">
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-white/[.08] bg-[#0a0a10] px-4 py-3">
+                <div class="flex items-center gap-2">
+                    <span class="size-2 rounded-full bg-emerald-400"></span>
+                    <span class="text-xs font-extrabold text-white">Vista previa en vivo</span>
+                    <span class="hidden text-[11px] text-zinc-500 sm:inline">· Web principal</span>
                 </div>
 
-                <div class="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-white/[.06] pt-4">
-                    <p class="text-[11px] text-zinc-400">
-                        <strong class="text-zinc-200">Consejo:</strong> Al guardar, todas las imágenes y videos subidos localmente se almacenan por bloques en la base de datos SQL del proyecto.
-                    </p>
-                    <button type="submit" class="btn-primary text-xs">
-                        <x-icon name="check-circle" class="size-4" />
-                        <span>Guardar publicidad y cambios</span>
+                <div class="flex items-center gap-1 rounded-full border border-white/10 bg-white/[.03] p-1">
+                    <button type="button" data-preview-mode="desktop" aria-pressed="true"
+                        class="rounded-full bg-fuchsia-500/25 px-2.5 py-1 text-[10px] font-bold text-fuchsia-100 transition">
+                        Escritorio
+                    </button>
+                    <button type="button" data-preview-mode="mobile" aria-pressed="false"
+                        class="rounded-full px-2.5 py-1 text-[10px] font-bold text-zinc-400 transition hover:text-zinc-200">
+                        Móvil
                     </button>
                 </div>
-            </section>
-        @endif
+            </div>
 
-        {{-- =======================================================================
-             2. SECCIONES EDITORIALES DEL SITIO PÚBLICO
-             ======================================================================= --}}
-        @foreach($sections as $key => $section)
-            @continue($key === 'promo')
-            <section data-reveal style="--stagger: {{ $loop->index % 3 }}" class="panel spotlight-card rounded-3xl p-6">
-                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-white/[.06] pb-4">
-                    <div>
-                        <p class="text-[10px] font-extrabold uppercase tracking-[.22em] text-fuchsia-300">
-                            {{ ['home' => 'Portada principal', 'banner' => 'Vitrina destacada', 'about' => 'Sobre nosotros', 'contact' => 'Contacto', 'faq' => 'Preguntas frecuentes'][$key] ?? $key }}
-                        </p>
-                        <h2 class="mt-1 text-lg font-extrabold text-white">{{ $section->title }}</h2>
+            <div class="flex flex-wrap gap-1.5 border-b border-white/[.06] bg-[#09090f] px-4 py-2 text-[10px]">
+                @foreach([
+                    ['hero', 'Portada y lámina'],
+                    ['about', 'Nosotros'],
+                    ['catalog', 'Catálogo'],
+                    ['faq', 'Preguntas'],
+                    ['contact', 'Contacto'],
+                ] as [$anchor, $label])
+                    <button type="button" data-preview-scroll="{{ $anchor }}"
+                        class="rounded-md border border-white/8 bg-white/[.02] px-2 py-1 font-semibold text-zinc-400 transition hover:border-white/20 hover:text-white">
+                        {{ $label }}
+                    </button>
+                @endforeach
+            </div>
+
+            <div class="max-h-[calc(100vh-12.5rem)] overflow-y-auto bg-[#07070b] p-4">
+                <div data-site-preview class="mx-auto w-full overflow-hidden rounded-[4px] border border-[#192315]/25 bg-[#F4EFE4] text-[#192315] shadow-2xl transition-all duration-300">
+                    {{-- Mini Masthead --}}
+                    <div class="flex items-center justify-between gap-2 border-b border-[#192315]/12 bg-[#F4EFE4] px-4 py-2.5">
+                        <div class="flex items-center gap-2">
+                            <span class="grid size-6 place-items-center rounded-[2px] bg-[#192315] text-[#F4EFE4]">
+                                <x-icon name="sprout" class="size-3.5" />
+                            </span>
+                            <div>
+                                <p class="font-serif text-sm font-semibold leading-none text-[#192315]">Bodega Los Olivos</p>
+                                <p class="text-[8px] font-semibold uppercase tracking-[0.14em] text-[#595548]">Despensa de barrio</p>
+                            </div>
+                        </div>
+                        <span data-pv-header-wa class="rounded-[2px] bg-[#192315] px-2.5 py-1 text-[9px] font-semibold text-[#F4EFE4]">
+                            {{ strlen($initialWhatsappDigits) >= 8 ? 'WhatsApp' : 'Contacto' }}
+                        </span>
                     </div>
-                    <label class="inline-flex cursor-pointer items-center gap-2.5 rounded-full border border-white/10 bg-white/[.03] px-3.5 py-2 text-xs font-semibold text-zinc-300 transition hover:border-white/20">
-                        <input type="hidden" name="sections[{{ $key }}][active]" value="0">
-                        <input class="size-4 rounded accent-fuchsia-500" type="checkbox" name="sections[{{ $key }}][active]" value="1" @checked(old("sections.$key.active", $section->active))>
-                        Visible en el sitio
-                    </label>
-                </div>
 
-                <div class="mt-5 grid gap-4 sm:grid-cols-2">
-                    <label class="text-xs font-bold text-zinc-300">
-                        Título
-                        <input class="field mt-2" name="sections[{{ $key }}][title]" value="{{ old("sections.$key.title", $section->title) }}" maxlength="160" required>
-                    </label>
-                    <label class="text-xs font-bold text-zinc-300">
-                        Texto / contenido
-                        <textarea class="field mt-2 min-h-24" name="sections[{{ $key }}][content]" maxlength="4000">{{ old("sections.$key.content", $section->content) }}</textarea>
-                    </label>
-                    @if(in_array($key, ['home', 'banner', 'contact']))
-                        <label class="text-xs font-bold text-zinc-300">
-                            Texto del botón
-                            <input class="field mt-2" name="sections[{{ $key }}][cta_label]" value="{{ old("sections.$key.cta_label", $section->cta_label) }}" maxlength="80">
-                        </label>
-                        @if(in_array($key, ['home', 'banner']))
-                            <label class="text-xs font-bold text-zinc-300">
-                                Enlace del botón
-                                <input class="field mt-2" name="sections[{{ $key }}][cta_url]" value="{{ old("sections.$key.cta_url", $section->cta_url) }}" maxlength="255" placeholder="https://… o #productos">
-                            </label>
+                    {{-- Preview 1: Hero & Banner --}}
+                    <div data-pv-block="hero" class="border-b border-[#192315]/14 px-4 py-5">
+                        <div data-pv-hero-empty class="hidden border border-dashed border-[#192315]/25 bg-[#FAF7EF] px-4 py-6 text-center text-[11px] text-[#595548]">
+                            Portada principal y Lámina fotográfica están ocultas. Activa al menos una para mostrar la cabecera editorial.
+                        </div>
+
+                        <div data-pv-hero-grid class="grid gap-4 sm:grid-cols-2">
+                            <div>
+                                <p class="text-[8px] font-bold uppercase tracking-[0.18em] text-[#A44A28]">Bodega Los Olivos · Atención diaria</p>
+                                <h3 data-pv-hero-title class="font-serif mt-2 text-2xl font-medium leading-[1.05] text-[#192315]">
+                                    {{ ($sections['home']->active ? $sections['home'] : $sections['banner'])->title }}
+                                </h3>
+                                <p data-pv-hero-content class="mt-2 whitespace-pre-line text-[11px] leading-4 text-[#4C493E]">
+                                    {{ ($sections['home']->active ? $sections['home'] : $sections['banner'])->content }}
+                                </p>
+                                <div class="mt-3 flex flex-wrap items-center gap-2">
+                                    <span data-pv-hero-cta class="inline-flex items-center gap-1 rounded-[2px] bg-[#192315] px-3 py-1.5 text-[10px] font-semibold text-[#F4EFE4]">
+                                        {{ ($sections['home']->active ? $sections['home'] : $sections['banner'])->cta_label ?: 'Explorar catálogo' }}
+                                    </span>
+                                    <span data-pv-hero-url class="font-mono-num text-[9px] text-[#595548]">
+                                        → {{ ($sections['home']->active ? $sections['home'] : $sections['banner'])->cta_url ?: '#productos' }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <figure data-pv-banner-box class="border border-[#192315]/18 bg-[#FAF7EF]">
+                                <div class="aspect-[16/10] w-full overflow-hidden bg-[#192315]">
+                                    <img src="{{ asset('images/bodega-peru.jpg') }}" alt="Vista previa de bodega peruana" class="h-full w-full object-cover">
+                                </div>
+                                <figcaption class="border-t border-[#192315]/12 px-3 py-2">
+                                    <p data-pv-banner-title class="font-serif text-xs font-medium text-[#192315]">{{ $sections['banner']->title }}</p>
+                                    <p data-pv-banner-content class="mt-0.5 text-[10px] leading-4 text-[#595548]">{{ $sections['banner']->content }}</p>
+                                    <div data-pv-banner-cta-wrap class="mt-1.5 {{ filled($sections['banner']->cta_label) ? '' : 'hidden' }}">
+                                        <span data-pv-banner-cta class="inline-block border-b border-[#A44A28] text-[9px] font-semibold text-[#A44A28]">
+                                            {{ $sections['banner']->cta_label }} →
+                                        </span>
+                                    </div>
+                                </figcaption>
+                            </figure>
+                        </div>
+                    </div>
+
+                    {{-- Preview 2: About --}}
+                    <div data-pv-block="about" class="border-b border-[#192315]/14 px-4 py-4">
+                        <div data-pv-section-off="about" class="{{ $sections['about']->active ? 'hidden' : '' }} border border-dashed border-[#192315]/25 bg-[#FAF7EF] px-3 py-2 text-[10px] font-medium text-[#595548]">
+                            Sección «Sobre nosotros» oculta en el sitio público.
+                        </div>
+                        <div data-pv-section-on="about" class="{{ $sections['about']->active ? '' : 'hidden' }}">
+                            <p class="text-[8px] font-bold uppercase tracking-[0.18em] text-[#A44A28]">01 · Sobre nosotros</p>
+                            <h4 data-pv-about-title class="font-serif mt-1 text-lg font-medium text-[#192315]">{{ $sections['about']->title }}</h4>
+                            <p data-pv-about-content class="mt-1.5 whitespace-pre-line font-serif text-xs leading-5 text-[#4C493E]">{{ $sections['about']->content }}</p>
+                        </div>
+                    </div>
+
+                    {{-- Preview 3: Auto Catalog Snapshot --}}
+                    <div data-pv-block="catalog" class="border-b border-[#192315]/14 bg-[#192315] px-4 py-4 text-[#F4EFE4]">
+                        <div class="flex items-center justify-between gap-2">
+                            <p class="text-[8px] font-bold uppercase tracking-[0.18em] text-[#D8B49A]">Sincronización automática · Catálogo</p>
+                            <span class="font-mono-num text-[9px] text-[#EAE3D2]">{{ $publicProducts->count() }} publicados</span>
+                        </div>
+                        @if($publicProducts->isNotEmpty())
+                            <div class="mt-2.5 grid grid-cols-2 gap-2">
+                                @foreach($publicProducts->take(4) as $item)
+                                    <div class="border border-white/15 bg-[#FAF7EF] p-2 text-[#192315]">
+                                        <p class="truncate text-[9px] font-bold">{{ $item->name }}</p>
+                                        <p class="font-mono-num mt-0.5 text-[10px] font-semibold text-[#A44A28]">S/ {{ number_format((float) $item->selling_price, 2) }}</p>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <p class="mt-2 text-[10px] text-[#D6D3C5]">Aún no hay productos marcados como públicos con stock disponible.</p>
                         @endif
-                    @endif
-                    @if($key === 'contact')
-                        <label class="text-xs font-bold text-zinc-300 sm:col-span-2">
-                            WhatsApp del negocio (código de país + número)
-                            <input class="field font-mono-num mt-2" name="sections[contact][whatsapp]" value="{{ old('sections.contact.whatsapp', $section->whatsapp) }}" maxlength="32" placeholder="51912345678">
-                        </label>
-                    @endif
-                </div>
-            </section>
-        @endforeach
+                    </div>
 
-        <div class="sticky bottom-20 z-20 flex justify-end pb-2 lg:bottom-5">
-            <button class="btn-primary shadow-2xl shadow-black/60">
-                <x-icon name="check-circle" class="size-4" />
-                <span>Guardar cambios del sitio</span>
-            </button>
-        </div>
-    </form>
+                    {{-- Preview 4: FAQ --}}
+                    <div data-pv-block="faq" class="border-b border-[#192315]/14 bg-[#EAE3D2] px-4 py-4">
+                        <div data-pv-section-off="faq" class="{{ $sections['faq']->active ? 'hidden' : '' }} border border-dashed border-[#192315]/25 bg-[#FAF7EF] px-3 py-2 text-[10px] font-medium text-[#595548]">
+                            Sección «Preguntas frecuentes» oculta en el sitio público.
+                        </div>
+                        <div data-pv-section-on="faq" class="{{ $sections['faq']->active ? '' : 'hidden' }}">
+                            <p class="text-[8px] font-bold uppercase tracking-[0.18em] text-[#A44A28]">03 · Orientación</p>
+                            <h4 data-pv-faq-title class="font-serif mt-1 text-lg font-medium text-[#192315]">{{ $sections['faq']->title }}</h4>
+                            <div data-pv-faq-list class="mt-2.5 divide-y divide-[#192315]/14 border-y border-[#192315]/14"></div>
+                        </div>
+                    </div>
+
+                    {{-- Preview 5: Contact --}}
+                    <div data-pv-block="contact" class="px-4 py-4">
+                        <div data-pv-section-off="contact" class="{{ $sections['contact']->active ? 'hidden' : '' }} border border-dashed border-[#192315]/25 bg-[#FAF7EF] px-3 py-2 text-[10px] font-medium text-[#595548]">
+                            Sección «Contacto» oculta en el sitio público.
+                        </div>
+                        <div data-pv-section-on="contact" class="{{ $sections['contact']->active ? '' : 'hidden' }} grid gap-3 sm:grid-cols-2">
+                            <div>
+                                <p class="text-[8px] font-bold uppercase tracking-[0.18em] text-[#A44A28]">04 · Contacto directo</p>
+                                <h4 data-pv-contact-title class="font-serif mt-1 text-lg font-medium text-[#192315]">{{ $sections['contact']->title }}</h4>
+                                <p data-pv-contact-content class="mt-1 whitespace-pre-line text-[10px] leading-4 text-[#4C493E]">{{ $sections['contact']->content }}</p>
+                                <div data-pv-wa-pill class="mt-2.5 {{ strlen($initialWhatsappDigits) >= 8 ? '' : 'hidden' }}">
+                                    <span class="inline-flex items-center gap-1 rounded-[2px] bg-[#192315] px-2.5 py-1 text-[9px] font-semibold text-[#F4EFE4]">
+                                        WhatsApp <span data-pv-wa-number class="font-mono-num">+{{ $initialWhatsappDigits }}</span>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="border border-[#192315]/18 bg-[#FAF7EF] p-3">
+                                <p class="font-serif text-xs font-medium text-[#192315]">Envíanos tu consulta</p>
+                                <div class="mt-2 space-y-1.5">
+                                    <div class="h-5 border border-[#192315]/15 bg-white"></div>
+                                    <div class="h-8 border border-[#192315]/15 bg-white"></div>
+                                    <span data-pv-contact-cta class="inline-block rounded-[2px] bg-[#192315] px-2.5 py-1 text-[9px] font-semibold text-[#F4EFE4]">
+                                        {{ $sections['contact']->cta_label ?: 'Enviar consulta' }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
 @endsection

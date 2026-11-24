@@ -448,6 +448,21 @@ export function initNiaChatbot() {
         sendQuery(chatInput.value);
     });
 
+    document.addEventListener('pointerdown', (event) => {
+        if (!isOpen) return;
+        const target = event.target;
+        if (!(target instanceof Node)) return;
+
+        const confirmModal = document.getElementById('cinema-confirm-modal');
+        if (confirmModal && !confirmModal.classList.contains('hidden') && confirmModal.contains(target)) {
+            return;
+        }
+
+        if (!chatWindow.contains(target) && !launcherBtn.contains(target)) {
+            setWindowOpen(false, { focusInput: false });
+        }
+    });
+
     document.addEventListener('keydown', (event) => {
         if (event.key !== 'Escape' || !isOpen) return;
 
