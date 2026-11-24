@@ -78,8 +78,29 @@
                         <input class="field mt-2" name="contact_name" value="{{ old('contact_name', $supplier->contact_name) }}" maxlength="120" placeholder="Ej. Jorge Navarro">
                     </label>
                     <label class="text-xs font-bold text-zinc-300">
-                        WhatsApp (código de país + número)
-                        <input class="field font-mono-num mt-2" name="phone" type="tel" value="{{ old('phone', $supplier->phone) }}" maxlength="32" placeholder="51999110022" required data-wa-input>
+                        WhatsApp (Perú +51)
+                        @php
+                            $supPhoneDigits = $supplier->whatsappDigits();
+                            if (strlen($supPhoneDigits) === 9 && str_starts_with($supPhoneDigits, '9')) {
+                                $supPhoneDigits = '51'.$supPhoneDigits;
+                            }
+                            $supPhoneVal = old('phone') !== null
+                                ? (string) old('phone')
+                                : ($supPhoneDigits !== '' ? '+'.$supPhoneDigits : '+51');
+                        @endphp
+                        <input class="field font-mono-num mt-2"
+                               name="phone"
+                               type="tel"
+                               value="{{ $supPhoneVal }}"
+                               maxlength="12"
+                               pattern="\+519[0-9]{8}"
+                               inputmode="numeric"
+                               data-peru-phone="required"
+                               title="Solo números de Perú: +51 seguido de 9 dígitos"
+                               placeholder="+51999110022"
+                               autocomplete="tel"
+                               required
+                               data-wa-input>
                         <span class="mt-1.5 flex items-center gap-1.5 text-[10px] font-medium text-emerald-300/80">
                             <x-icon name="whatsapp" class="size-3" />
                             <span>Enlace directo: <code data-wa-preview class="font-mono-num">wa.me/{{ $supplier->whatsappDigits() ?: '519...' }}</code></span>

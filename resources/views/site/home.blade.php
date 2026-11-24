@@ -114,12 +114,23 @@
                             aria-label="Recorrido interactivo 3D por la bodega"
                         ></canvas>
 
-                        {{-- Estado discreto de carga 3D & expand (sin backdrop-blur sobre WebGL para 60fps estables) --}}
-                        <div class="pointer-events-none absolute inset-x-3 top-3 z-20 flex items-center justify-between gap-2">
-                            <span data-bodega-loading class="inline-flex items-center gap-1.5 rounded-[2px] border border-[#FAF7EF]/25 bg-[#192315]/92 px-2.5 py-1 text-[10px] font-semibold text-[#F4EFE4]">
-                                <span class="size-1.5 animate-pulse rounded-full bg-[#D8B49A]"></span>
-                                Cargando recorrido 3D…
-                            </span>
+                        {{-- Estado de carga 3D (Spinner circular + progreso real .glb) & expand --}}
+                        <div class="pointer-events-none absolute inset-x-3 top-3 z-20 flex items-start justify-between gap-2">
+                            <div data-bodega-loading class="inline-flex min-w-[168px] flex-col gap-1.5 rounded-[2px] border border-[#FAF7EF]/25 bg-[#192315]/92 px-3 py-2 text-[10px] font-semibold text-[#F4EFE4] shadow-md">
+                                <div class="flex items-center justify-between gap-2">
+                                    <span class="inline-flex items-center gap-1.5">
+                                        <svg class="editorial-spinner-ring size-3.5 shrink-0" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                            <circle cx="12" cy="12" r="9.5" stroke="rgba(250,247,239,0.22)" stroke-width="2.4" />
+                                            <path d="M12 2.5a9.5 9.5 0 0 1 9.5 9.5" stroke="#D8B49A" stroke-width="2.4" stroke-linecap="round" />
+                                        </svg>
+                                        <span>Vista 3D</span>
+                                    </span>
+                                    <span data-bodega-progress-text class="font-mono-num text-[#D8B49A]">0%</span>
+                                </div>
+                                <div class="h-[2px] w-full overflow-hidden rounded-full bg-[#FAF7EF]/15">
+                                    <div data-bodega-progress-bar class="h-full w-[8%] bg-[#D8B49A] transition-[width] duration-150 ease-out"></div>
+                                </div>
+                            </div>
                             <span data-bodega-hover-tip class="hidden rounded-[2px] border border-[#192315]/25 bg-[#FAF7EF] px-2.5 py-1 text-[11px] font-semibold text-[#192315] shadow-md"></span>
                             <button
                                 type="button"
@@ -209,18 +220,124 @@
                 </div>
             </div>
 
-            <div class="mt-14 grid divide-y divide-[#192315]/14 border-y border-[#192315]/14 md:grid-cols-3 md:divide-x md:divide-y-0">
-                @foreach([
-                    ['01', 'Abastecimiento cuidado', 'Trabajamos con proveedores seleccionados para sostener frescura y rotación diaria en cada categoría de tu hogar.'],
-                    ['02', 'Precios transparentes', 'Control ordenado de costos y márgenes justos para ofrecer valor real todos los días, sin sorpresas en mostrador.'],
-                    ['03', 'Atención cercana y ágil', 'Consulta nuestro stock publicado al instante y separa tu pedido directo por WhatsApp sin hacer largas colas.'],
-                ] as [$num, $title, $desc])
-                    <article data-reveal style="--stagger: {{ $loop->index }}" class="py-7 md:px-7 md:first:pl-0 md:last:pr-0">
-                        <span class="font-mono-num text-xs font-semibold text-[#A44A28]">{{ $num }}</span>
-                        <h3 class="font-editorial mt-3 text-2xl font-medium text-[#192315]">{{ $title }}</h3>
-                        <p class="mt-2.5 text-sm leading-6 text-[#595548]">{{ $desc }}</p>
-                    </article>
-                @endforeach
+            @php
+                $aboutPillars = [
+                    [
+                        'num' => '01',
+                        'tag' => 'Rotación diaria',
+                        'title' => 'Abastecimiento cuidado',
+                        'desc' => 'Trabajamos con proveedores seleccionados para sostener frescura y rotación diaria en cada categoría de tu hogar.',
+                        'meta' => 'Proveedores locales',
+                    ],
+                    [
+                        'num' => '02',
+                        'tag' => 'Costo real',
+                        'title' => 'Precios transparentes',
+                        'desc' => 'Control ordenado de costos y márgenes justos para ofrecer valor real todos los días, sin sorpresas en mostrador.',
+                        'meta' => 'Actualizado al día',
+                    ],
+                    [
+                        'num' => '03',
+                        'tag' => 'WhatsApp directo',
+                        'title' => 'Atención cercana y ágil',
+                        'desc' => 'Consulta nuestro stock publicado al instante y separa tu pedido directo por WhatsApp sin hacer largas colas.',
+                        'meta' => 'Lista separada hoy',
+                    ],
+                    [
+                        'num' => '04',
+                        'tag' => 'Cero recargo',
+                        'title' => 'Yape, Plin y Tarjetas',
+                        'desc' => 'Aceptamos todas tus billeteras digitales, tarjetas Visa o Mastercard y efectivo en tienda al mismo precio publicado.',
+                        'meta' => 'Pago inmediato',
+                    ],
+                    [
+                        'num' => '05',
+                        'tag' => 'Desde 7:00 a. m.',
+                        'title' => 'Panadería y cosecha AM',
+                        'desc' => 'Pan artesanal recién horneado, café tostado de Chanchamayo, queso fresco y miel pura seleccionada cada mañana.',
+                        'meta' => 'Lote fresco AM',
+                    ],
+                    [
+                        'num' => '06',
+                        'tag' => 'Lunes a domingo',
+                        'title' => 'Horario extendido de barrio',
+                        'desc' => 'Abiertos de corrido todos los días de la semana para cubrir tu desayuno, almuerzo o cualquier compra de último minuto.',
+                        'meta' => 'Atención diaria',
+                    ],
+                    [
+                        'num' => '07',
+                        'tag' => 'Para negocios',
+                        'title' => 'Pedidos por volumen',
+                        'desc' => 'Atendemos cafeterías, menús y oficinas vecinas con entregas coordinadas y surtido estable en abarrotes.',
+                        'meta' => 'Atención preferente',
+                    ],
+                ];
+            @endphp
+
+            <div data-matrix-carousel data-reveal
+                 class="relative mt-14 overflow-hidden border-y border-[#192315]/16 bg-[#EFE8D8]/65 py-6 sm:py-8">
+                {{-- Sutil lluvia tipográfica Matrix en paleta verde bosque y terracota --}}
+                <canvas data-matrix-rain aria-hidden="true" class="pointer-events-none absolute inset-0 h-full w-full"></canvas>
+
+                {{-- Barra superior editorial de control del carrusel --}}
+                <div class="relative z-10 mb-5 flex flex-wrap items-center justify-between gap-3 px-4 sm:px-6">
+                    <div class="flex items-center gap-2.5">
+                        <span class="size-2 rounded-full bg-[#263822]"></span>
+                        <span class="font-mono-num text-[10px] font-semibold uppercase tracking-[0.2em] text-[#263822]">
+                            Bodega en vivo · {{ count($aboutPillars) }} pilares
+                        </span>
+                        <span data-matrix-state class="font-mono-num hidden rounded-[2px] border border-[#192315]/15 bg-[#FAF7EF]/85 px-2 py-0.5 text-[10px] font-semibold text-[#595548] sm:inline-block">
+                            Flujo activo
+                        </span>
+                    </div>
+
+                    <div class="flex items-center gap-1.5">
+                        <button type="button" data-matrix-prev aria-label="Desplazar banner a la izquierda"
+                                class="grid size-8 place-items-center rounded-[2px] border border-[#192315]/18 bg-[#FAF7EF] text-[#192315] transition-colors hover:border-[#192315] hover:bg-white">
+                            <x-icon name="arrow-left" class="size-3.5" />
+                        </button>
+                        <button type="button" data-matrix-toggle aria-pressed="false"
+                                class="font-mono-num inline-flex h-8 items-center rounded-[2px] border border-[#192315]/18 bg-[#FAF7EF] px-3 text-[10px] font-semibold uppercase tracking-wider text-[#192315] transition-colors hover:border-[#192315] hover:bg-white">
+                            Pausar
+                        </button>
+                        <button type="button" data-matrix-next aria-label="Desplazar banner a la derecha"
+                                class="grid size-8 place-items-center rounded-[2px] border border-[#192315]/18 bg-[#FAF7EF] text-[#192315] transition-colors hover:border-[#192315] hover:bg-white">
+                            <x-icon name="arrow-right" class="size-3.5" />
+                        </button>
+                    </div>
+                </div>
+
+                {{-- Carrusel infinito con degradado lateral suave --}}
+                <div data-matrix-viewport class="matrix-carousel-viewport relative z-10 cursor-grab touch-pan-y overflow-hidden select-none active:cursor-grabbing">
+                    <div data-matrix-track class="matrix-carousel-track flex gap-4 pl-4 sm:gap-5 sm:pl-6">
+                        @foreach($aboutPillars as $pillar)
+                            <article class="group flex w-[288px] shrink-0 flex-col justify-between rounded-[2px] border border-[#192315]/18 bg-[#FAF7EF]/95 p-6 backdrop-blur-[2px] transition-colors duration-200 hover:border-[#A44A28]/55 hover:bg-white sm:w-[325px]">
+                                <div>
+                                    <div class="flex items-center justify-between gap-2 border-b border-[#192315]/12 pb-3">
+                                        <span class="font-mono-num text-xs font-semibold text-[#A44A28]">{{ $pillar['num'] }}</span>
+                                        <span data-matrix-tag class="font-mono-num rounded-[2px] border border-[#263822]/20 bg-[#263822]/[0.07] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#263822]">
+                                            {{ $pillar['tag'] }}
+                                        </span>
+                                    </div>
+
+                                    <h3 class="font-editorial mt-4 text-2xl font-medium leading-snug text-[#192315]">
+                                        {{ $pillar['title'] }}
+                                    </h3>
+                                    <p class="mt-2.5 text-sm leading-6 text-[#595548]">
+                                        {{ $pillar['desc'] }}
+                                    </p>
+                                </div>
+
+                                <div class="mt-6 flex items-center justify-between border-t border-[#192315]/10 pt-3">
+                                    <span class="font-mono-num text-[10px] font-semibold uppercase tracking-[0.16em] text-[#595548]">
+                                        {{ $pillar['meta'] }}
+                                    </span>
+                                    <span class="size-1.5 rounded-full bg-[#A44A28]/70 transition-transform duration-200 group-hover:scale-150"></span>
+                                </div>
+                            </article>
+                        @endforeach
+                    </div>
+                </div>
             </div>
         </section>
         @endif
@@ -307,7 +424,30 @@
             </div>
 
             @if($products->isNotEmpty())
-                <div class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {{-- Skeleton loader mostrado brevemente al filtrar categorías --}}
+                <div data-catalog-skeleton class="mt-10 hidden grid gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-hidden="true">
+                    @for($s = 0; $s < 4; $s++)
+                        <div class="flex flex-col justify-between rounded-[2px] border border-[#192315]/14 bg-[#FAF7EF] p-6">
+                            <div>
+                                <div class="flex items-center justify-between border-b border-[#192315]/10 pb-3">
+                                    <span class="editorial-skeleton-bar h-3 w-7 rounded-[2px]"></span>
+                                    <span class="editorial-skeleton-bar h-3 w-16 rounded-[2px]"></span>
+                                </div>
+                                <div class="editorial-skeleton-bar mt-5 h-2.5 w-20 rounded-[2px]"></div>
+                                <div class="editorial-skeleton-bar mt-2.5 h-6 w-4/5 rounded-[2px]"></div>
+                            </div>
+                            <div class="mt-8 flex items-end justify-between border-t border-[#192315]/10 pt-4">
+                                <div class="space-y-1.5">
+                                    <div class="editorial-skeleton-bar h-5 w-16 rounded-[2px]"></div>
+                                    <div class="editorial-skeleton-bar h-2.5 w-12 rounded-[2px]"></div>
+                                </div>
+                                <div class="editorial-skeleton-bar h-9 w-20 rounded-[2px]"></div>
+                            </div>
+                        </div>
+                    @endfor
+                </div>
+
+                <div data-catalog-grid class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     @foreach($products as $product)
                         @php
                             $isLow = (float) $product->stock <= (float) $product->low_stock_at;
@@ -447,31 +587,97 @@
                     <div class="grid gap-4 sm:grid-cols-2">
                         <label class="text-xs font-semibold text-[#192315]">
                             Tu nombre
-                            <input class="editorial-field mt-1.5" name="name" maxlength="160" placeholder="Ej. Ana María" required>
+                            <input class="editorial-field mt-1.5"
+                                   name="name"
+                                   value="{{ old('name') }}"
+                                   maxlength="160"
+                                   pattern="[A-Za-zÁÉÍÓÚÜÑáéíóúüñÀ-ÿ\s'\.\-]+"
+                                   data-person-name="true"
+                                   title="Ingresa solo letras para tu nombre (no se permiten números)"
+                                   autocomplete="name"
+                                   placeholder="Ej. Ana María"
+                                   required>
+                            <span class="mt-1 block text-[11px] font-normal text-[#595548]">Solo letras y espacios (sin números).</span>
                         </label>
                         <label class="text-xs font-semibold text-[#192315]">
-                            WhatsApp
-                            <input class="editorial-field font-mono-num mt-1.5" name="phone" type="tel" maxlength="32" placeholder="519XXXXXXXX" required>
+                            WhatsApp (Perú +51)
+                            <input class="editorial-field font-mono-num mt-1.5"
+                                   name="phone"
+                                   type="tel"
+                                   value="{{ old('phone', '+51') }}"
+                                   maxlength="12"
+                                   pattern="\+519[0-9]{8}"
+                                   inputmode="numeric"
+                                   data-peru-phone="required"
+                                   title="Ingresa un celular de Perú de 9 dígitos después de +51 (ej. +51987654321)"
+                                   placeholder="+519XXXXXXXX"
+                                   autocomplete="tel"
+                                   required>
+                            <span class="mt-1 block text-[11px] font-normal text-[#595548]">Solo números · Prefijo +51 fijo (9 dígitos).</span>
                         </label>
                     </div>
                     <label class="text-xs font-semibold text-[#192315]">
                         Correo (opcional)
-                        <input class="editorial-field mt-1.5" name="email" type="email" maxlength="255" placeholder="tucorreo@ejemplo.com">
+                        <input class="editorial-field mt-1.5" name="email" type="email" value="{{ old('email') }}" maxlength="255" placeholder="tucorreo@ejemplo.com">
                     </label>
                     <label class="text-xs font-semibold text-[#192315]">
                         ¿En qué podemos ayudarte?
-                        <textarea class="editorial-field mt-1.5 min-h-28 resize-y" name="message" maxlength="2000" placeholder="Cuéntanos qué productos buscas o tu consulta…" required></textarea>
+                        <textarea class="editorial-field mt-1.5 min-h-28 resize-y" name="message" maxlength="2000" placeholder="Cuéntanos qué productos buscas o tu consulta…" required>{{ old('message') }}</textarea>
                     </label>
                     @if($errors->any())
                         <p role="alert" class="rounded-[2px] border border-[#A44A28]/40 bg-[#A44A28]/10 px-3.5 py-2.5 text-xs font-semibold text-[#7A3217]">{{ $errors->first() }}</p>
                     @endif
-                    <button class="editorial-btn-primary mt-1 w-full sm:w-fit">
-                        <span>{{ $sections['contact']->cta_label ?: 'Enviar consulta' }}</span>
-                        <x-icon name="send" class="size-4" />
+                    <button type="submit" data-contact-submit class="editorial-btn-primary mt-1 w-full sm:w-fit disabled:cursor-not-allowed disabled:opacity-75">
+                        <span data-submit-label>{{ $sections['contact']->cta_label ?: 'Enviar consulta' }}</span>
+                        <span data-submit-icon><x-icon name="send" class="size-4" /></span>
+                        <svg data-submit-spinner class="editorial-spinner-ring hidden size-4 shrink-0" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <circle cx="12" cy="12" r="9.5" stroke="rgba(244,239,228,0.28)" stroke-width="2.4" />
+                            <path d="M12 2.5a9.5 9.5 0 0 1 9.5 9.5" stroke="#FAF7EF" stroke-width="2.4" stroke-linecap="round" />
+                        </svg>
                     </button>
                 </form>
             </div>
         </section>
         @endif
     </main>
+
+    {{-- RIBBON TYPE 3D INTERACTIVO (Flotando encima del límite entre Contacto y Footer, transparente y z-30 sobre el footer) --}}
+    @php
+        $ribbonPhrases = [
+            'BODEGA LOS OLIVOS · DESPENSA PERUANA · COSECHA DEL DÍA',
+            'PEDIDOS DIRECTOS POR WHATSAPP · ATENCIÓN TODOS LOS DÍAS',
+            'GRANOS ANDINOS · FRUTAS FRESCAS · PAN ARTESANAL',
+            'YAPE, PLIN Y TARJETAS SIN RECARGO · TU BODEGA DE BARRIO',
+        ];
+    @endphp
+    <div aria-label="Cinta interactiva Bodega Los Olivos"
+         data-ribbon-type
+         data-ribbon-phrases='@json($ribbonPhrases)'
+         class="pointer-events-none relative z-30 -mb-[72px] w-full overflow-x-clip pt-3 sm:-mb-[92px] sm:pt-4 lg:-mb-[105px]">
+        <div class="mx-auto flex max-w-7xl items-center justify-between px-5 pb-1 sm:px-8">
+            <span data-ribbon-hint class="font-mono-num text-[10px] font-semibold uppercase tracking-[0.2em] text-[#7A351B]">
+                Toca o arrastra la cinta
+            </span>
+            <span data-ribbon-status class="font-mono-num text-[10px] font-semibold text-[#595548]">
+                1 / {{ count($ribbonPhrases) }}
+            </span>
+        </div>
+
+        <div data-ribbon-canvas
+             role="button"
+             tabindex="0"
+             aria-label="Cinta 3D interactiva: haz clic o arrastra para mover y cambiar mensaje"
+             class="pointer-events-auto relative h-[144px] w-full cursor-grab touch-pan-y select-none active:cursor-grabbing focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A44A28]/50 sm:h-[184px] lg:h-[210px]">
+            {{-- Skeleton shimmer hasta montar WebGL --}}
+            <div data-ribbon-skeleton class="pointer-events-none absolute inset-x-0 top-1/2 mx-auto flex max-w-4xl -translate-y-1/2 items-center gap-3 px-6">
+                <span class="editorial-skeleton-bar h-6 flex-1 rounded-[2px]"></span>
+            </div>
+        </div>
+
+        {{-- Fallback sin WebGL / Accesibilidad --}}
+        <div data-ribbon-fallback class="hidden px-5 py-6 text-center sm:px-8">
+            <p class="font-editorial text-xl font-medium text-[#A44A28]">{{ $ribbonPhrases[0] }}</p>
+        </div>
+        <p class="sr-only">{{ implode(' — ', $ribbonPhrases) }}</p>
+    </div>
 @endsection

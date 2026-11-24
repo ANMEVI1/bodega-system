@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\ContactSubmission;
 use App\Models\Product;
 use App\Models\SiteSection;
+use App\Support\InputGuard;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class SiteController extends Controller
@@ -96,13 +98,10 @@ class SiteController extends Controller
                     'string',
                     'max:32',
                     function (string $attribute, mixed $value, \Closure $fail): void {
-                        $trimmed = trim((string) $value);
-                        if ($trimmed === '') {
-                            return;
-                        }
-                        $digits = preg_replace('/\D+/', '', $trimmed) ?? '';
-                        if (strlen($digits) < 8 || strlen($digits) > 15) {
-                            $fail('El WhatsApp del negocio debe contener entre 8 y 15 dígitos (ej. 51987654321).');
+                        try {
+                            InputGuard::normalizePeruPhone(is_string($value) ? $value : null, required: false, field: $attribute);
+                        } catch (ValidationException $e) {
+                            $fail($e->validator->errors()->first($attribute) ?: 'Ingresa un WhatsApp válido de Perú (+519XXXXXXXX).');
                         }
                     },
                 ],
@@ -124,8 +123,8 @@ class SiteController extends Controller
                 $ctaUrl = isset($section['cta_url']) ? trim((string) $section['cta_url']) : '';
                 $rawContent = isset($section['content']) ? trim((string) $section['content']) : '';
                 $rawWhatsapp = trim((string) ($section['whatsapp'] ?? ''));
-                $whatsappDigits = ($key === 'contact' && $rawWhatsapp !== '')
-                    ? (preg_replace('/\D+/', '', $rawWhatsapp) ?: null)
+                $whatsappDigits = $key === 'contact'
+                    ? InputGuard::normalizePeruPhone($rawWhatsapp, required: false, field: 'sections.contact.whatsapp')
                     : null;
 
                 SiteSection::query()->updateOrCreate(
@@ -150,10 +149,15 @@ class SiteController extends Controller
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:160'],
-            'phone' => ['required', 'string', 'max:32'],
+            'phone' => ['required', 'string', 'max:20'],
             'email' => ['nullable', 'email', 'max:255'],
             'message' => ['required', 'string', 'max:2000'],
         ]);
+
+        $data['name'] = InputGuard::normalizePersonName($data['name'], 'name');
+        $data['message'] = InputGuard::cleanText($data['message']);
+        $data['phone'] = (string) InputGuard::normalizePeruPhone($data['phone'], required: true, field: 'phone');
+
         ContactSubmission::query()->create($data);
         $whatsapp = SiteSection::query()->where('section', 'contact')->value('whatsapp');
 

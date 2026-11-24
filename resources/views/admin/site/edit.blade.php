@@ -352,12 +352,16 @@
                                     id="section-contact-whatsapp"
                                     class="field font-mono-num mt-2"
                                     name="sections[contact][whatsapp]"
-                                    value="{{ $initialWhatsapp }}"
-                                    maxlength="32"
-                                    inputmode="tel"
+                                    type="tel"
+                                    value="{{ old('sections.contact.whatsapp') !== null ? (string) old('sections.contact.whatsapp') : (strlen($initialWhatsappDigits) > 2 ? '+'.$initialWhatsappDigits : '+51') }}"
+                                    maxlength="12"
+                                    pattern="(\+51|\+519[0-9]{8})?"
+                                    inputmode="numeric"
                                     data-section-input="contact"
                                     data-field-role="whatsapp"
-                                    placeholder="51987654321 (o +51 987 654 321)"
+                                    data-peru-phone="optional"
+                                    title="Solo números de Perú: +51 seguido de 9 dígitos"
+                                    placeholder="+51987654321"
                                 >
                                 <p data-wa-helper class="mt-2 text-[11px] leading-5 text-zinc-400">
                                     Conecta directamente el botón <strong class="text-zinc-200">WhatsApp</strong> de la barra superior, el bloque de contacto y la redirección automática tras enviar una consulta. Si lo dejas vacío, el formulario solo registra la consulta en el panel.

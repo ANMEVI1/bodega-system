@@ -19,37 +19,47 @@
     <div class="ambient-amber fixed -bottom-52 -right-40 -z-10 size-128 rounded-full blur-[130px] opacity-60 print:hidden"></div>
 
     @php
-        $adminName = auth()->user()?->name ?? 'Administrador';
+        $currentUser = auth()->user();
+        $currentUser?->loadMissing('role');
+        $adminName = $currentUser?->name ?? 'Administrador';
+        $adminRoleName = $currentUser?->role?->name ?? ($currentUser?->isSuperAdmin() ? 'Super Administrador' : 'Operador');
         $adminInitial = mb_strtoupper(mb_substr($adminName, 0, 1));
+        $homeAdminRoute = $currentUser?->firstAllowedAdminRoute() ?? 'admin.dashboard';
         $criticalStockCount = \Illuminate\Support\Facades\Schema::hasTable('products')
             ? \App\Models\Product::query()
                 ->where('active', true)
                 ->where(fn ($query) => $query->whereColumn('stock', '<=', 'low_stock_at')->orWhere('stock', '<=', 5))
                 ->count()
             : (int) ($navLowStock ?? 0);
-        $navItems = [
-            ['route' => 'admin.dashboard', 'label' => 'Inicio', 'icon' => 'home', 'badge' => null],
-            ['route' => 'admin.clients.index', 'label' => 'Clientes', 'icon' => 'users', 'badge' => null],
-            ['route' => 'admin.products.index', 'label' => 'Productos', 'icon' => 'shopping-bag', 'badge' => null],
-            ['route' => 'admin.categories.index', 'label' => 'Categorías', 'icon' => 'tag', 'badge' => null],
-            ['route' => 'admin.inventory.index', 'label' => 'Inventario', 'icon' => 'layers', 'badge' => ($navLowStock ?? 0) > 0 ? $navLowStock : null],
-            ['route' => 'admin.suppliers.index', 'label' => 'Proveedores', 'icon' => 'truck', 'badge' => null],
-            ['route' => 'admin.sales.index', 'label' => 'Ventas y finanzas', 'icon' => 'trending-up', 'badge' => null],
-            ['route' => 'admin.contacts.index', 'label' => 'Consultas web', 'icon' => 'message', 'badge' => ($navNewContacts ?? 0) > 0 ? $navNewContacts : null],
-            ['route' => 'admin.site.edit', 'label' => 'Editar página web', 'icon' => 'globe', 'badge' => null],
-        ];
-        $mobileNavItems = [
-            ['route' => 'admin.dashboard', 'label' => 'Inicio', 'icon' => 'home'],
-            ['route' => 'admin.clients.index', 'label' => 'Clientes', 'icon' => 'users'],
-            ['route' => 'admin.inventory.index', 'label' => 'Stock', 'icon' => 'layers'],
-            ['route' => 'admin.sales.index', 'label' => 'Ventas', 'icon' => 'trending-up'],
-        ];
+        $canSeeNav = fn (array $item): bool => $currentUser ? $currentUser->hasAnyPermission($item['permissions']) : false;
+        $navItems = array_values(array_filter([
+            ['route' => 'admin.dashboard', 'label' => 'Inicio', 'icon' => 'home', 'badge' => null, 'permissions' => ['dashboard.view']],
+            ['route' => 'admin.clients.index', 'label' => 'Clientes', 'icon' => 'users', 'badge' => null, 'permissions' => ['clients.view', 'clients.manage']],
+            ['route' => 'admin.products.index', 'label' => 'Productos', 'icon' => 'shopping-bag', 'badge' => null, 'permissions' => ['products.view', 'products.manage']],
+            ['route' => 'admin.categories.index', 'label' => 'Categorías', 'icon' => 'tag', 'badge' => null, 'permissions' => ['categories.manage']],
+            ['route' => 'admin.inventory.index', 'label' => 'Inventario', 'icon' => 'layers', 'badge' => ($navLowStock ?? 0) > 0 ? $navLowStock : null, 'permissions' => ['inventory.view', 'products.manage']],
+            ['route' => 'admin.suppliers.index', 'label' => 'Proveedores', 'icon' => 'truck', 'badge' => null, 'permissions' => ['suppliers.view', 'suppliers.manage']],
+            ['route' => 'admin.sales.index', 'label' => 'Ventas y finanzas', 'icon' => 'trending-up', 'badge' => null, 'permissions' => ['sales.view', 'sales.create']],
+            ['route' => 'admin.contacts.index', 'label' => 'Consultas web', 'icon' => 'message', 'badge' => ($navNewContacts ?? 0) > 0 ? $navNewContacts : null, 'permissions' => ['contacts.view', 'contacts.manage']],
+            ['route' => 'admin.site.edit', 'label' => 'Editar página web', 'icon' => 'globe', 'badge' => null, 'permissions' => ['site.edit']],
+        ], $canSeeNav));
+        $securityNavItems = array_values(array_filter([
+            ['route' => 'admin.users.index', 'label' => 'Usuarios y equipo', 'icon' => 'users', 'badge' => null, 'permissions' => ['users.view', 'users.manage']],
+            ['route' => 'admin.roles.index', 'label' => 'Roles y permisos', 'icon' => 'shield', 'badge' => null, 'permissions' => ['roles.manage']],
+        ], $canSeeNav));
+        $allDrawerNavItems = array_merge($navItems, $securityNavItems);
+        $mobileNavItems = array_values(array_filter([
+            ['route' => 'admin.dashboard', 'label' => 'Inicio', 'icon' => 'home', 'permissions' => ['dashboard.view']],
+            ['route' => 'admin.clients.index', 'label' => 'Clientes', 'icon' => 'users', 'permissions' => ['clients.view', 'clients.manage']],
+            ['route' => 'admin.inventory.index', 'label' => 'Stock', 'icon' => 'layers', 'permissions' => ['inventory.view', 'products.manage']],
+            ['route' => 'admin.sales.index', 'label' => 'Ventas', 'icon' => 'trending-up', 'permissions' => ['sales.view', 'sales.create']],
+        ], $canSeeNav));
     @endphp
 
     <div class="relative min-h-screen lg:pl-68">
         {{-- Desktop Sidebar --}}
-        <aside class="fixed inset-y-0 left-0 z-30 hidden w-68 flex-col border-r border-white/7 bg-[#08080c]/85 px-4 py-6 backdrop-blur-2xl lg:flex print:hidden">
-            <a href="{{ route('admin.dashboard') }}" class="group flex items-center gap-3.5 px-2.5">
+        <aside class="fixed inset-y-0 left-0 z-30 hidden w-68 flex-col overflow-y-auto border-r border-white/7 bg-[#08080c]/85 px-4 py-6 backdrop-blur-2xl lg:flex print:hidden">
+            <a href="{{ route($homeAdminRoute) }}" class="group flex items-center gap-3.5 px-2.5">
                 <span class="relative grid size-11 place-items-center rounded-2xl bg-linear-to-br from-fuchsia-500 via-purple-600 to-violet-700 text-base font-black text-white shadow-lg shadow-fuchsia-500/25 transition duration-300 group-hover:scale-105 group-hover:shadow-fuchsia-500/40">
                     N
                     <span class="absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/25"></span>
@@ -60,25 +70,47 @@
                 </span>
             </a>
 
-            <p class="mb-2.5 mt-9 px-3 text-[10px] font-extrabold uppercase tracking-[.22em] text-zinc-600">Operaciones</p>
-            <nav aria-label="Navegación principal" class="space-y-1">
-                @foreach($navItems as $item)
-                    @php
-                        $active = request()->routeIs($item['route'] === 'admin.dashboard' ? $item['route'] : str_replace('.index', '.*', $item['route']));
-                    @endphp
-                    <a href="{{ route($item['route']) }}"
-                       class="group relative flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-xs font-bold transition-all duration-200 {{ $active ? 'bg-linear-to-r from-white/13 to-white/4 text-white shadow-lg shadow-black/30 ring-1 ring-white/15' : 'text-zinc-400 hover:bg-white/4 hover:text-zinc-100' }}">
-                        @if($active)
-                            <span class="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-linear-to-b from-fuchsia-400 to-violet-500"></span>
-                        @endif
-                        <x-icon :name="$item['icon']" class="size-4.5 shrink-0 transition duration-200 {{ $active ? 'text-fuchsia-300' : 'text-zinc-500 group-hover:text-zinc-200' }}" />
-                        <span class="flex-1 truncate">{{ $item['label'] }}</span>
-                        @if($item['badge'])
-                            <span class="font-mono-num rounded-full bg-fuchsia-500/20 px-2 py-0.5 text-[10px] font-bold text-fuchsia-200 ring-1 ring-fuchsia-400/25">{{ $item['badge'] }}</span>
-                        @endif
-                    </a>
-                @endforeach
-            </nav>
+            @if(count($navItems))
+                <p class="mb-2.5 mt-9 px-3 text-[10px] font-extrabold uppercase tracking-[.22em] text-zinc-600">Operaciones</p>
+                <nav aria-label="Navegación principal" class="space-y-1">
+                    @foreach($navItems as $item)
+                        @php
+                            $pattern = $item['route'] === 'admin.dashboard' ? $item['route'] : preg_replace('/\.(index|edit)$/', '.*', $item['route']);
+                            $active = request()->routeIs($pattern);
+                        @endphp
+                        <a href="{{ route($item['route']) }}"
+                           class="group relative flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-xs font-bold transition-all duration-200 {{ $active ? 'bg-linear-to-r from-white/13 to-white/4 text-white shadow-lg shadow-black/30 ring-1 ring-white/15' : 'text-zinc-400 hover:bg-white/4 hover:text-zinc-100' }}">
+                            @if($active)
+                                <span class="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-linear-to-b from-fuchsia-400 to-violet-500"></span>
+                            @endif
+                            <x-icon :name="$item['icon']" class="size-4.5 shrink-0 transition duration-200 {{ $active ? 'text-fuchsia-300' : 'text-zinc-500 group-hover:text-zinc-200' }}" />
+                            <span class="flex-1 truncate">{{ $item['label'] }}</span>
+                            @if($item['badge'])
+                                <span class="font-mono-num rounded-full bg-fuchsia-500/20 px-2 py-0.5 text-[10px] font-bold text-fuchsia-200 ring-1 ring-fuchsia-400/25">{{ $item['badge'] }}</span>
+                            @endif
+                        </a>
+                    @endforeach
+                </nav>
+            @endif
+
+            @if(count($securityNavItems))
+                <p class="mb-2.5 mt-7 px-3 text-[10px] font-extrabold uppercase tracking-[.22em] text-zinc-600">Seguridad y RBAC</p>
+                <nav aria-label="Control de acceso" class="space-y-1">
+                    @foreach($securityNavItems as $item)
+                        @php
+                            $active = request()->routeIs(preg_replace('/\.(index|edit)$/', '.*', $item['route']));
+                        @endphp
+                        <a href="{{ route($item['route']) }}"
+                           class="group relative flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-xs font-bold transition-all duration-200 {{ $active ? 'bg-linear-to-r from-white/13 to-white/4 text-white shadow-lg shadow-black/30 ring-1 ring-white/15' : 'text-zinc-400 hover:bg-white/4 hover:text-zinc-100' }}">
+                            @if($active)
+                                <span class="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-linear-to-b from-fuchsia-400 to-violet-500"></span>
+                            @endif
+                            <x-icon :name="$item['icon']" class="size-4.5 shrink-0 transition duration-200 {{ $active ? 'text-fuchsia-300' : 'text-zinc-500 group-hover:text-zinc-200' }}" />
+                            <span class="flex-1 truncate">{{ $item['label'] }}</span>
+                        </a>
+                    @endforeach
+                </nav>
+            @endif
 
             <div class="mt-auto space-y-3 pt-4">
                 <a href="{{ route('home') }}" target="_blank" rel="noopener noreferrer"
@@ -96,7 +128,7 @@
                     </span>
                     <div class="min-w-0 flex-1">
                         <p class="truncate text-xs font-bold text-white">{{ $adminName }}</p>
-                        <p class="text-[10px] font-medium text-zinc-500">Administrador</p>
+                        <p class="truncate text-[10px] font-medium text-zinc-500">{{ $adminRoleName }}</p>
                     </div>
                     <form method="POST" action="{{ route('admin.logout') }}" data-nia-logout>
                         @csrf
@@ -110,13 +142,13 @@
 
         {{-- Mobile Slide-Over Drawer --}}
         <div data-mobile-drawer class="fixed inset-0 z-50 hidden flex-col bg-black/75 backdrop-blur-md lg:hidden print:hidden">
-            <div class="mt-auto rounded-t-4xl border-t border-white/10 bg-[#0d0d12] p-6 shadow-2xl">
+            <div class="mt-auto max-h-[82vh] overflow-y-auto rounded-t-4xl border-t border-white/10 bg-[#0d0d12] p-6 shadow-2xl">
                 <div class="mb-5 flex items-center justify-between">
                     <div class="flex items-center gap-3">
                         <span class="grid size-9 place-items-center rounded-xl bg-linear-to-br from-fuchsia-500 to-violet-600 text-xs font-black">N</span>
                         <div>
                             <p class="text-sm font-extrabold text-white">{{ $adminName }}</p>
-                            <p class="text-[11px] text-zinc-500">NEXO Bodega · Menú</p>
+                            <p class="text-[11px] text-zinc-500">{{ $adminRoleName }}</p>
                         </div>
                     </div>
                     <button type="button" data-drawer-close class="grid size-9 place-items-center rounded-full border border-white/10 bg-white/5 text-zinc-300" aria-label="Cerrar menú">
@@ -124,7 +156,7 @@
                     </button>
                 </div>
                 <div class="grid grid-cols-2 gap-2.5">
-                    @foreach($navItems as $item)
+                    @foreach($allDrawerNavItems as $item)
                         <a href="{{ route($item['route']) }}" class="flex items-center gap-2.5 rounded-2xl border border-white/7 bg-white/3 px-3.5 py-3 text-xs font-bold text-zinc-200">
                             <x-icon :name="$item['icon']" class="size-4 text-fuchsia-300" />
                             <span class="truncate">{{ $item['label'] }}</span>
@@ -206,7 +238,7 @@
         </main>
 
         {{-- Mobile Bottom Navigation --}}
-        <nav aria-label="Navegación móvil" class="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-white/8 bg-[#09090d]/95 px-1 pb-[env(safe-area-inset-bottom)] pt-1.5 backdrop-blur-2xl lg:hidden print:hidden">
+        <nav aria-label="Navegación móvil" class="fixed inset-x-0 bottom-0 z-30 grid grid-flow-col auto-cols-fr border-t border-white/8 bg-[#09090d]/95 px-1 pb-[env(safe-area-inset-bottom)] pt-1.5 backdrop-blur-2xl lg:hidden print:hidden">
             @foreach($mobileNavItems as $item)
                 @php
                     $active = request()->routeIs($item['route'] === 'admin.dashboard' ? $item['route'] : str_replace('.index', '.*', $item['route']));
@@ -245,6 +277,8 @@
         </div>
     </div>
 
-    <x-nia-chatbot :low-stock-count="$criticalStockCount" />
+    @if($currentUser?->hasPermission('assistant.use'))
+        <x-nia-chatbot :low-stock-count="$criticalStockCount" />
+    @endif
 </body>
 </html>

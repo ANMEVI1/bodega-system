@@ -13,6 +13,40 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="site-editorial relative min-h-screen antialiased">
+    {{-- Preloader editorial inicial (Círculo giratorio + barra de progreso, solo web pública) --}}
+    <div id="site-preloader"
+         data-site-preloader
+         role="status"
+         aria-live="polite"
+         aria-label="Cargando tienda"
+         class="fixed inset-0 z-[70] flex items-center justify-center bg-[#F4EFE4] px-6 text-[#192315] print:hidden">
+        <div class="w-full max-w-xs border border-[#192315]/16 bg-[#FAF7EF] p-6 shadow-sm">
+            <div class="flex items-center gap-4">
+                <div class="relative grid size-12 shrink-0 place-items-center">
+                    <svg class="editorial-spinner-ring size-12" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+                        <circle cx="24" cy="24" r="20" stroke="rgba(25,35,21,0.12)" stroke-width="2.2" />
+                        <path d="M24 4a20 20 0 0 1 20 20" stroke="#A44A28" stroke-width="2.4" stroke-linecap="round" />
+                    </svg>
+                    <x-icon name="sprout" class="absolute size-4 text-[#263822]" />
+                </div>
+                <div class="min-w-0 flex-1">
+                    <p class="font-editorial text-lg font-medium leading-tight text-[#192315]">Bodega Los Olivos</p>
+                    <p data-preloader-label class="mt-0.5 text-[11px] font-medium text-[#595548]">Preparando despensa del día…</p>
+                </div>
+                <span data-preloader-pct class="font-mono-num text-xs font-semibold text-[#A44A28]">0%</span>
+            </div>
+
+            <div class="mt-4 h-[3px] w-full overflow-hidden rounded-full bg-[#192315]/12">
+                <div data-preloader-bar class="h-full w-0 bg-gradient-to-r from-[#263822] to-[#A44A28] transition-[width] duration-150 ease-out"></div>
+            </div>
+        </div>
+    </div>
+    <script>
+        if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            document.getElementById('site-preloader')?.classList.add('is-done');
+        }
+    </script>
+
     {{-- Fondo editorial cálido con retícula sutil --}}
     <div class="site-backdrop-layer pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">
         <div class="site-grid-editorial absolute inset-0"></div>
@@ -87,7 +121,7 @@
 
     @yield('content')
 
-    <footer class="border-t border-[#192315]/15 bg-[#192315] px-5 py-14 text-[#EAE3D2] sm:px-8">
+    <footer class="relative z-10 border-t border-[#192315]/15 bg-[#192315] px-5 pb-14 pt-28 text-[#EAE3D2] sm:px-8 sm:pt-32 lg:pt-36">
         <div class="mx-auto grid max-w-7xl gap-10 md:grid-cols-[1.25fr_.85fr_.9fr]">
             <div>
                 <div class="inline-flex items-center gap-3">

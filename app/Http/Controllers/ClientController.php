@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Client;
+use App\Support\InputGuard;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -14,7 +15,12 @@ class ClientController extends Controller
     {
         $clients = Client::query()->with(['latestSale.product'])
             ->withSum(['sales as total_spent' => fn ($query) => $query->where('status', 'paid')], 'total')
-            ->when($request->string('q')->trim()->value(), fn ($query, $term) => $query->where(fn ($query) => $query->where('name', 'like', "%{$term}%")->orWhere('phone', 'like', "%{$term}%")->orWhere('email', 'like', "%{$term}%")))
+            ->when($request->string('q')->trim()->value(), function ($query, $term) {
+                $escaped = InputGuard::escapeLike($term);
+                $query->where(fn ($q) => $q->where('name', 'like', "%{$escaped}%")
+                    ->orWhere('phone', 'like', "%{$escaped}%")
+                    ->orWhere('email', 'like', "%{$escaped}%"));
+            })
             ->orderBy('name')->paginate(12)->withQueryString();
 
         return view('admin.clients.index', ['clients' => $clients]);
