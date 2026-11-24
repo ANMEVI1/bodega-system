@@ -4,16 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\ContactSubmission;
 use App\Models\Product;
-use App\Models\SiteMedia;
 use App\Models\SiteSection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
-use Symfony\Component\HttpFoundation\Response;
 
 class SiteController extends Controller
 {
@@ -51,14 +48,6 @@ class SiteController extends Controller
     public function home(): View
     {
         $products = $this->publicProducts();
-
-        $promoMedia = SiteMedia::query()
-            ->withCount('chunks')
-            ->where('section', 'promo')
-            ->where('active', true)
-            ->orderBy('sort_order')
-            ->orderBy('id')
-            ->get();
 
         return view('site.home', [
             'sections' => SiteSection::resolved(),
@@ -127,8 +116,7 @@ class SiteController extends Controller
             ]
         );
 
-        DB::transaction(function () use ($request, $data): void {
-            // 1. Update text sections
+        DB::transaction(function () use ($data): void {
             foreach ($data['sections'] as $key => $section) {
                 Validator::make(['section' => $key], ['section' => ['required', 'in:home,banner,about,contact,faq']])->validate();
 
@@ -155,76 +143,7 @@ class SiteController extends Controller
             }
         });
 
-        return back()->with('success', 'La página pública y el contenido multimedia quedaron guardados en la base de datos.');
-    }
-
-    public function destroyMedia(SiteMedia $media): RedirectResponse
-    {
-        $media->delete();
-
-        return back()->with('success', 'El elemento multimedia fue eliminado.');
-    }
-
-    private function applyUploadedFileToMedia(SiteMedia $media, UploadedFile $file, string $requestedMediaType): void
-    {
-        $mime = $file->getMimeType() ?: ($file->getClientMimeType() ?: 'application/octet-stream');
-        $ext = strtolower($file->getClientOriginalExtension());
-        $isVideo = str_starts_with($mime, 'video/') || in_array($ext, ['mp4', 'webm', 'ogg', 'mov', 'm4v'], true);
-
-        $mediaType = $requestedMediaType !== 'auto'
-            ? $requestedMediaType
-            : ($isVideo ? 'video' : 'image');
-
-        $media->forceFill([
-            'source_type' => 'upload',
-            'media_type' => $mediaType,
-            'external_url' => null,
-        ])->save();
-
-        $binary = (string) file_get_contents($file->getRealPath());
-        $media->storeBinary($binary, $mime, $file->getClientOriginalName());
-    }
-
-    private function applyExternalUrlToMedia(SiteMedia $media, string $url, string $requestedMediaType, bool $syncRemoteImage): void
-    {
-        $isEmbedVideo = (bool) preg_match('~(?:youtube\.com/|youtu\.be/|vimeo\.com/)~i', $url);
-        $path = strtolower((string) parse_url($url, PHP_URL_PATH));
-        $isDirectVideo = (bool) preg_match('~\.(mp4|webm|ogg|mov|m4v)$~i', $path);
-
-        $mediaType = $requestedMediaType !== 'auto'
-            ? $requestedMediaType
-            : (($isEmbedVideo || $isDirectVideo) ? 'video' : 'image');
-
-        $media->forceFill([
-            'source_type' => 'url',
-            'media_type' => $mediaType,
-            'external_url' => $url,
-        ])->save();
-
-        // If it's a web image URL, also attempt to download and store a copy in the database
-        // so that opening the project on any new laptop or offline still loads the image from the DB!
-        if ($syncRemoteImage && $mediaType === 'image' && ! $isEmbedVideo) {
-            try {
-                $response = Http::timeout(6)
-                    ->withHeaders(['User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'])
-                    ->get($url);
-
-                if ($response->successful()) {
-                    $contentType = strtolower((string) $response->header('Content-Type'));
-                    $body = $response->body();
-                    if (str_starts_with($contentType, 'image/') && strlen($body) > 0 && strlen($body) <= 25 * 1024 * 1024) {
-                        $cleanMime = trim(explode(';', $contentType)[0]);
-                        $fileName = basename((string) parse_url($url, PHP_URL_PATH)) ?: 'imagen-web.jpg';
-                        $media->storeBinary($body, $cleanMime, $fileName);
-                    }
-                }
-            } catch (\Throwable) {
-                // Keep external_url fallback if remote host is unreachable
-            }
-        } elseif ($mediaType === 'video') {
-            $media->chunks()->delete();
-            $media->forceFill(['file_size' => null, 'file_name' => null, 'mime_type' => null])->save();
-        }
+        return back()->with('success', 'La página pública quedó actualizada.');
     }
 
     public function contact(Request $request): RedirectResponse

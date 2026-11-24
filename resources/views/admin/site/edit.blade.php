@@ -140,19 +140,19 @@
                     @foreach($sections as $key => $section)
                         @php $meta = $sectionMeta[$key] ?? ['label' => $key]; @endphp
                         <button type="button" data-section-tab="{{ $key }}" aria-selected="false"
-                            class="rounded-full border border-white/10 bg-white/[.03] px-3 py-1.5 text-[11px] font-semibold text-zinc-400 transition hover:border-white/25 hover:text-zinc-200">
+                            class="rounded-full border border-white/10 bg-white/3 px-3 py-1.5 text-[11px] font-semibold text-zinc-400 transition hover:border-white/25 hover:text-zinc-200">
                             {{ $meta['label'] }}
                         </button>
                     @endforeach
                 </div>
 
-                <span data-editor-dirty-badge class="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[.03] px-3 py-1 text-[11px] font-semibold text-zinc-400">
+                <span data-editor-dirty-badge class="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/3 px-3 py-1 text-[11px] font-semibold text-zinc-400">
                     <span class="size-1.5 rounded-full bg-emerald-400" data-dirty-dot></span>
                     <span data-dirty-text>Sincronizado</span>
                 </span>
             </div>
 
-            <div class="flex items-center justify-between gap-3 rounded-2xl border border-emerald-400/15 bg-emerald-500/[.04] px-4 py-2.5 text-[11px] text-emerald-200">
+            <div class="flex items-center justify-between gap-3 rounded-2xl border border-emerald-400/15 bg-emerald-500/4 px-4 py-2.5 text-[11px] text-emerald-200">
                 <div class="flex items-center gap-2">
                     <x-icon name="sparkles" class="size-4 shrink-0 text-emerald-300" />
                     <span><strong>Chatbot de tienda sincronizado:</strong> el asistente público de <code class="text-emerald-100">/</code> usa automáticamente estos textos, preguntas frecuentes y tu catálogo público sin exponer datos internos.</span>
@@ -184,12 +184,12 @@
 
                         <div class="flex items-center gap-2">
                             <button type="button" data-reset-section="{{ $key }}"
-                                class="rounded-full border border-white/10 bg-white/[.03] px-3 py-1.5 text-[11px] font-semibold text-zinc-400 transition hover:border-white/25 hover:text-zinc-100"
+                                class="rounded-full border border-white/10 bg-white/3 px-3 py-1.5 text-[11px] font-semibold text-zinc-400 transition hover:border-white/25 hover:text-zinc-100"
                                 title="Restaurar texto sugerido para este bloque">
                                 Restaurar
                             </button>
 
-                            <label class="inline-flex cursor-pointer items-center gap-2.5 rounded-full border border-white/12 bg-white/[.04] px-3 py-1.5 text-xs font-semibold text-zinc-200 transition hover:border-white/25">
+                            <label class="inline-flex cursor-pointer items-center gap-2.5 rounded-full border border-white/12 bg-white/4 px-3 py-1.5 text-xs font-semibold text-zinc-200 transition hover:border-white/25">
                                 <input type="hidden" name="sections[{{ $key }}][active]" value="0">
                                 <input
                                     type="checkbox"
@@ -236,7 +236,7 @@
                                         <p class="text-[11px] text-zinc-400">Cada fila crea un desplegable ordenado en la sección Preguntas frecuentes del sitio.</p>
                                     </div>
                                     <div class="flex items-center gap-2">
-                                        <button type="button" data-faq-toggle-raw class="rounded-full border border-white/10 bg-white/[.03] px-3 py-1 text-[11px] font-semibold text-zinc-400 transition hover:border-white/25 hover:text-zinc-100">
+                                        <button type="button" data-faq-toggle-raw class="rounded-full border border-white/10 bg-white/3 px-3 py-1 text-[11px] font-semibold text-zinc-400 transition hover:border-white/25 hover:text-zinc-100">
                                             Modo texto
                                         </button>
                                         <button type="button" data-faq-add class="inline-flex items-center gap-1 rounded-full border border-fuchsia-400/35 bg-fuchsia-500/15 px-3 py-1 text-[11px] font-bold text-fuchsia-200 transition hover:bg-fuchsia-500/25">
@@ -319,7 +319,7 @@
                                                 ['#preguntas', 'Preguntas'],
                                             ] as [$presetUrl, $presetLabel])
                                                 <button type="button" data-cta-preset="{{ $presetUrl }}" data-cta-target="section-{{ $key }}-cta-url"
-                                                    class="rounded-full border border-white/10 bg-white/[.03] px-2.5 py-0.5 text-[10px] font-semibold text-zinc-400 transition hover:border-fuchsia-400/40 hover:text-fuchsia-200">
+                                                    class="rounded-full border border-white/10 bg-white/3 px-2.5 py-0.5 text-[10px] font-semibold text-zinc-400 transition hover:border-fuchsia-400/40 hover:text-fuchsia-200">
                                                     {{ $presetLabel }}
                                                 </button>
                                             @endforeach
@@ -330,7 +330,7 @@
                         @endif
 
                         @if($key === 'contact')
-                            <div class="rounded-2xl border border-emerald-400/15 bg-emerald-500/[.04] p-4">
+                            <div class="rounded-2xl border border-emerald-400/15 bg-emerald-500/4 p-4">
                                 <div class="flex flex-wrap items-center justify-between gap-2">
                                     <label for="section-contact-whatsapp" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-200">
                                         <x-icon name="whatsapp" class="size-4 text-emerald-400" />
@@ -381,14 +381,14 @@
 
         {{-- COLUMNA DERECHA: VISTA PREVIA DINÁMICA EN VIVO --}}
         <aside class="panel overflow-hidden rounded-3xl xl:sticky xl:top-20" aria-label="Vista previa en tiempo real">
-            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-white/[.08] bg-[#0a0a10] px-4 py-3">
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-white/8 bg-[#0a0a10] px-4 py-3">
                 <div class="flex items-center gap-2">
                     <span class="size-2 rounded-full bg-emerald-400"></span>
                     <span class="text-xs font-extrabold text-white">Vista previa en vivo</span>
                     <span class="hidden text-[11px] text-zinc-500 sm:inline">· Web principal</span>
                 </div>
 
-                <div class="flex items-center gap-1 rounded-full border border-white/10 bg-white/[.03] p-1">
+                <div class="flex items-center gap-1 rounded-full border border-white/10 bg-white/3 p-1">
                     <button type="button" data-preview-mode="desktop" aria-pressed="true"
                         class="rounded-full bg-fuchsia-500/25 px-2.5 py-1 text-[10px] font-bold text-fuchsia-100 transition">
                         Escritorio
@@ -400,7 +400,7 @@
                 </div>
             </div>
 
-            <div class="flex flex-wrap gap-1.5 border-b border-white/[.06] bg-[#09090f] px-4 py-2 text-[10px]">
+            <div class="flex flex-wrap gap-1.5 border-b border-white/6 bg-[#09090f] px-4 py-2 text-[10px]">
                 @foreach([
                     ['hero', 'Portada y lámina'],
                     ['about', 'Nosotros'],
@@ -409,18 +409,18 @@
                     ['contact', 'Contacto'],
                 ] as [$anchor, $label])
                     <button type="button" data-preview-scroll="{{ $anchor }}"
-                        class="rounded-md border border-white/8 bg-white/[.02] px-2 py-1 font-semibold text-zinc-400 transition hover:border-white/20 hover:text-white">
+                        class="rounded-md border border-white/8 bg-white/2 px-2 py-1 font-semibold text-zinc-400 transition hover:border-white/20 hover:text-white">
                         {{ $label }}
                     </button>
                 @endforeach
             </div>
 
             <div class="max-h-[calc(100vh-12.5rem)] overflow-y-auto bg-[#07070b] p-4">
-                <div data-site-preview class="mx-auto w-full overflow-hidden rounded-[4px] border border-[#192315]/25 bg-[#F4EFE4] text-[#192315] shadow-2xl transition-all duration-300">
+                <div data-site-preview class="mx-auto w-full overflow-hidden rounded-sm border border-[#192315]/25 bg-[#F4EFE4] text-[#192315] shadow-2xl transition-all duration-300">
                     {{-- Mini Masthead --}}
                     <div class="flex items-center justify-between gap-2 border-b border-[#192315]/12 bg-[#F4EFE4] px-4 py-2.5">
                         <div class="flex items-center gap-2">
-                            <span class="grid size-6 place-items-center rounded-[2px] bg-[#192315] text-[#F4EFE4]">
+                            <span class="grid size-6 place-items-center rounded-xs bg-[#192315] text-[#F4EFE4]">
                                 <x-icon name="sprout" class="size-3.5" />
                             </span>
                             <div>
@@ -428,7 +428,7 @@
                                 <p class="text-[8px] font-semibold uppercase tracking-[0.14em] text-[#595548]">Despensa de barrio</p>
                             </div>
                         </div>
-                        <span data-pv-header-wa class="rounded-[2px] bg-[#192315] px-2.5 py-1 text-[9px] font-semibold text-[#F4EFE4]">
+                        <span data-pv-header-wa class="rounded-xs bg-[#192315] px-2.5 py-1 text-[9px] font-semibold text-[#F4EFE4]">
                             {{ strlen($initialWhatsappDigits) >= 8 ? 'WhatsApp' : 'Contacto' }}
                         </span>
                     </div>
@@ -449,7 +449,7 @@
                                     {{ ($sections['home']->active ? $sections['home'] : $sections['banner'])->content }}
                                 </p>
                                 <div class="mt-3 flex flex-wrap items-center gap-2">
-                                    <span data-pv-hero-cta class="inline-flex items-center gap-1 rounded-[2px] bg-[#192315] px-3 py-1.5 text-[10px] font-semibold text-[#F4EFE4]">
+                                    <span data-pv-hero-cta class="inline-flex items-center gap-1 rounded-xs bg-[#192315] px-3 py-1.5 text-[10px] font-semibold text-[#F4EFE4]">
                                         {{ ($sections['home']->active ? $sections['home'] : $sections['banner'])->cta_label ?: 'Explorar catálogo' }}
                                     </span>
                                     <span data-pv-hero-url class="font-mono-num text-[9px] text-[#595548]">
@@ -459,7 +459,7 @@
                             </div>
 
                             <figure data-pv-banner-box class="border border-[#192315]/18 bg-[#FAF7EF]">
-                                <div class="aspect-[16/10] w-full overflow-hidden bg-[#192315]">
+                                <div class="aspect-16/10 w-full overflow-hidden bg-[#192315]">
                                     <img src="{{ asset('images/bodega-peru.jpg') }}" alt="Vista previa de bodega peruana" class="h-full w-full object-cover">
                                 </div>
                                 <figcaption class="border-t border-[#192315]/12 px-3 py-2">
@@ -530,7 +530,7 @@
                                 <h4 data-pv-contact-title class="font-serif mt-1 text-lg font-medium text-[#192315]">{{ $sections['contact']->title }}</h4>
                                 <p data-pv-contact-content class="mt-1 whitespace-pre-line text-[10px] leading-4 text-[#4C493E]">{{ $sections['contact']->content }}</p>
                                 <div data-pv-wa-pill class="mt-2.5 {{ strlen($initialWhatsappDigits) >= 8 ? '' : 'hidden' }}">
-                                    <span class="inline-flex items-center gap-1 rounded-[2px] bg-[#192315] px-2.5 py-1 text-[9px] font-semibold text-[#F4EFE4]">
+                                    <span class="inline-flex items-center gap-1 rounded-xs bg-[#192315] px-2.5 py-1 text-[9px] font-semibold text-[#F4EFE4]">
                                         WhatsApp <span data-pv-wa-number class="font-mono-num">+{{ $initialWhatsappDigits }}</span>
                                     </span>
                                 </div>
@@ -540,7 +540,7 @@
                                 <div class="mt-2 space-y-1.5">
                                     <div class="h-5 border border-[#192315]/15 bg-white"></div>
                                     <div class="h-8 border border-[#192315]/15 bg-white"></div>
-                                    <span data-pv-contact-cta class="inline-block rounded-[2px] bg-[#192315] px-2.5 py-1 text-[9px] font-semibold text-[#F4EFE4]">
+                                    <span data-pv-contact-cta class="inline-block rounded-xs bg-[#192315] px-2.5 py-1 text-[9px] font-semibold text-[#F4EFE4]">
                                         {{ $sections['contact']->cta_label ?: 'Enviar consulta' }}
                                     </span>
                                 </div>

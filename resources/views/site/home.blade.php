@@ -23,7 +23,7 @@
                         </p>
 
                         <h1 data-cinema-enter style="--enter-delay: 1"
-                            class="font-editorial mt-5 max-w-2xl text-[2.85rem] font-medium leading-[0.98] tracking-[-0.025em] text-[#192315] sm:text-[4rem] lg:text-[4.65rem]">
+                            class="font-editorial mt-5 max-w-2xl text-[2.85rem] font-medium leading-[0.98] tracking-tight text-[#192315] sm:text-[4rem] lg:text-[4.65rem]">
                             {{ $hero->title }}
                         </h1>
 
@@ -99,7 +99,7 @@
                         data-bodega-viewport
                         data-model-url="{{ asset('models/bodega-3d.glb') }}"
                         data-bodega-catalog="{{ json_encode($catalogPreviewPayload) }}"
-                        class="bodega-viewport relative aspect-[5/4] w-full overflow-hidden bg-[#192315] sm:aspect-[16/12]"
+                        class="bodega-viewport relative aspect-5/4 w-full overflow-hidden bg-[#192315] sm:aspect-16/12"
                     >
                         <img
                             src="{{ asset('images/bodega-peru.jpg') }}"
@@ -116,18 +116,18 @@
 
                         {{-- Estado discreto de carga 3D & expand (sin backdrop-blur sobre WebGL para 60fps estables) --}}
                         <div class="pointer-events-none absolute inset-x-3 top-3 z-20 flex items-center justify-between gap-2">
-                            <span data-bodega-loading class="inline-flex items-center gap-1.5 rounded-[2px] border border-[#FAF7EF]/25 bg-[#192315]/92 px-2.5 py-1 text-[10px] font-semibold text-[#F4EFE4]">
+                            <span data-bodega-loading class="inline-flex items-center gap-1.5 rounded-xs border border-[#FAF7EF]/25 bg-[#192315]/92 px-2.5 py-1 text-[10px] font-semibold text-[#F4EFE4]">
                                 <span class="size-1.5 animate-pulse rounded-full bg-[#D8B49A]"></span>
                                 Cargando recorrido 3D…
                             </span>
-                            <span data-bodega-hover-tip class="hidden rounded-[2px] border border-[#192315]/25 bg-[#FAF7EF] px-2.5 py-1 text-[11px] font-semibold text-[#192315] shadow-md"></span>
+                            <span data-bodega-hover-tip class="hidden rounded-xs border border-[#192315]/25 bg-[#FAF7EF] px-2.5 py-1 text-[11px] font-semibold text-[#192315] shadow-md"></span>
                             <button
                                 type="button"
                                 data-bodega-expand
                                 aria-pressed="false"
                                 title="Ampliar visor 3D"
                                 aria-label="Ampliar o contraer visor 3D"
-                                class="pointer-events-auto ml-auto inline-flex size-8 items-center justify-center rounded-[2px] border border-[#FAF7EF]/30 bg-[#192315]/90 text-[#F4EFE4] transition-colors hover:bg-[#192315]"
+                                class="pointer-events-auto ml-auto inline-flex size-8 items-center justify-center rounded-xs border border-[#FAF7EF]/30 bg-[#192315]/90 text-[#F4EFE4] transition-colors hover:bg-[#192315]"
                             >
                                 <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                     <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" x2="14" y1="3" y2="10"/><line x1="3" x2="10" y1="21" y2="14"/>
@@ -188,7 +188,6 @@
                 </figure>
                 @endif
             </div>
-            @endif
         </section>
         @endif
 
@@ -236,7 +235,7 @@
                         class="h-full w-full object-cover opacity-20"
                     >
                 </div>
-                <div class="absolute inset-0 bg-gradient-to-r from-[#192315]/96 via-[#192315]/86 to-[#192315]/92"></div>
+                <div class="absolute inset-0 bg-linear-to-r from-[#192315]/96 via-[#192315]/86 to-[#192315]/92"></div>
             </div>
 
             <div class="relative z-10 mx-auto grid max-w-7xl items-center gap-10 px-5 py-16 sm:px-8 lg:grid-cols-[1.2fr_.8fr] lg:py-20">
@@ -315,7 +314,7 @@
                         @endphp
                         <article data-reveal data-product-card data-category="{{ $product->category }}"
                                  style="--stagger: {{ $loop->index % 4 }}"
-                                 class="group flex flex-col justify-between rounded-[2px] border border-[#192315]/16 bg-[#FAF7EF] p-6 transition-colors duration-200 hover:border-[#192315]/40 hover:bg-white">
+                                 class="group flex flex-col justify-between rounded-xs border border-[#192315]/16 bg-[#FAF7EF] p-6 transition-colors duration-200 hover:border-[#192315]/40 hover:bg-white">
                             <div>
                                 <div class="flex items-center justify-between gap-3 border-b border-[#192315]/10 pb-3">
                                     <span class="font-mono-num text-xs font-semibold text-[#595548]">
@@ -336,7 +335,7 @@
                                     <p class="mt-0.5 text-[11px] text-[#595548]">por {{ $product->unit }}</p>
                                 </div>
                                 <button type="button" data-inquire-product="{{ $product->name }}"
-                                    class="inline-flex min-h-[38px] items-center gap-1.5 rounded-[2px] border border-[#192315] bg-transparent px-3.5 py-1.5 text-xs font-semibold text-[#192315] transition-colors hover:bg-[#192315] hover:text-[#F4EFE4]">
+                                    class="inline-flex min-h-9.5 items-center gap-1.5 rounded-xs border border-[#192315] bg-transparent px-3.5 py-1.5 text-xs font-semibold text-[#192315] transition-colors hover:bg-[#192315] hover:text-[#F4EFE4]">
                                     <span>Pedir</span>
                                     <x-icon name="arrow-up-right" class="size-3.5" />
                                 </button>
@@ -464,7 +463,7 @@
                         <textarea class="editorial-field mt-1.5 min-h-28 resize-y" name="message" maxlength="2000" placeholder="Cuéntanos qué productos buscas o tu consulta…" required></textarea>
                     </label>
                     @if($errors->any())
-                        <p role="alert" class="rounded-[2px] border border-[#A44A28]/40 bg-[#A44A28]/10 px-3.5 py-2.5 text-xs font-semibold text-[#7A3217]">{{ $errors->first() }}</p>
+                        <p role="alert" class="rounded-xs border border-[#A44A28]/40 bg-[#A44A28]/10 px-3.5 py-2.5 text-xs font-semibold text-[#7A3217]">{{ $errors->first() }}</p>
                     @endif
                     <button class="editorial-btn-primary mt-1 w-full sm:w-fit">
                         <span>{{ $sections['contact']->cta_label ?: 'Enviar consulta' }}</span>
