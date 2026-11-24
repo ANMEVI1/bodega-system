@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Support\InputGuard;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -17,7 +18,8 @@ class CategoryController extends Controller
         $categories = Category::query()
             ->withCount('products')
             ->when($request->string('q')->trim()->value(), function ($query, $term) {
-                $query->where(fn ($q) => $q->where('name', 'like', "%{$term}%")->orWhere('description', 'like', "%{$term}%"));
+                $escaped = InputGuard::escapeLike($term);
+                $query->where(fn ($q) => $q->where('name', 'like', "%{$escaped}%")->orWhere('description', 'like', "%{$escaped}%"));
             })
             ->when($request->has('status') && $request->input('status') !== '', function ($query) use ($request) {
                 $query->where('active', $request->boolean('status'));

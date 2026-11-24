@@ -57,14 +57,18 @@
             </h1>
         </div>
         <div class="flex flex-wrap gap-2.5">
-            <a href="{{ route('admin.sales.index') }}" class="btn-primary text-xs">
-                <x-icon name="plus" class="size-4" />
-                <span>Registrar venta</span>
-            </a>
-            <a href="{{ route('admin.site.edit') }}" class="btn-subtle text-xs">
-                <x-icon name="globe" class="size-4 text-zinc-400" />
-                <span>Editar página web</span>
-            </a>
+            @if(auth()->user()?->hasPermission('sales.create'))
+                <a href="{{ route('admin.sales.index') }}" class="btn-primary text-xs">
+                    <x-icon name="plus" class="size-4" />
+                    <span>Registrar venta</span>
+                </a>
+            @endif
+            @if(auth()->user()?->hasPermission('site.edit'))
+                <a href="{{ route('admin.site.edit') }}" class="btn-subtle text-xs">
+                    <x-icon name="globe" class="size-4 text-zinc-400" />
+                    <span>Editar página web</span>
+                </a>
+            @endif
         </div>
     </div>
 
@@ -151,10 +155,12 @@
                     <p class="text-[11px] font-bold uppercase tracking-[.16em] text-amber-300/90">Reposición</p>
                     <h2 class="mt-1 text-lg font-extrabold tracking-tight text-white">Stock por revisar</h2>
                 </div>
-                <a href="{{ route('admin.products.index') }}" class="inline-flex items-center gap-1 text-xs font-bold text-fuchsia-300 transition hover:text-fuchsia-200">
-                    Inventario
-                    <x-icon name="arrow-right" class="size-3.5" />
-                </a>
+                @if(auth()->user()?->hasAnyPermission(['products.view', 'products.manage']))
+                    <a href="{{ route('admin.products.index') }}" class="inline-flex items-center gap-1 text-xs font-bold text-fuchsia-300 transition hover:text-fuchsia-200">
+                        Inventario
+                        <x-icon name="arrow-right" class="size-3.5" />
+                    </a>
+                @endif
             </div>
 
             <div class="mt-5 space-y-3">
@@ -189,10 +195,12 @@
                     <p class="text-[11px] font-bold uppercase tracking-[.16em] text-zinc-400">Actividad reciente</p>
                     <h2 class="mt-1 text-lg font-extrabold tracking-tight text-white">Últimas ventas</h2>
                 </div>
-                <a href="{{ route('admin.sales.index') }}" class="inline-flex items-center gap-1 text-xs font-bold text-fuchsia-300 transition hover:text-fuchsia-200">
-                    Ver todas
-                    <x-icon name="arrow-right" class="size-3.5" />
-                </a>
+                @if(auth()->user()?->hasAnyPermission(['sales.view', 'sales.create']))
+                    <a href="{{ route('admin.sales.index') }}" class="inline-flex items-center gap-1 text-xs font-bold text-fuchsia-300 transition hover:text-fuchsia-200">
+                        Ver todas
+                        <x-icon name="arrow-right" class="size-3.5" />
+                    </a>
+                @endif
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full min-w-135 text-left text-xs">

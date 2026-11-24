@@ -5,6 +5,76 @@ import { initSiteChatbot } from './site-chatbot';
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* --------------------------------------------------------------------------
+ * 0. Editorial Preloader & Top Progress Bar (Public Storefront Only)
+ * -------------------------------------------------------------------------- */
+const sitePreloader = document.querySelector('[data-site-preloader]');
+if (sitePreloader) {
+    const barEl = sitePreloader.querySelector('[data-preloader-bar]');
+    const pctEl = sitePreloader.querySelector('[data-preloader-pct]');
+    const labelEl = sitePreloader.querySelector('[data-preloader-label]');
+    let pct = 18;
+    let finished = false;
+
+    const setProgress = (value, text) => {
+        pct = Math.min(100, Math.max(pct, Math.round(value)));
+        if (barEl) barEl.style.width = `${pct}%`;
+        if (pctEl) pctEl.textContent = `${pct}%`;
+        if (text && labelEl) labelEl.textContent = text;
+    };
+
+    const finishPreloader = () => {
+        if (finished) return;
+        finished = true;
+        setProgress(100, '¡Listo para atenderte!');
+        setTimeout(() => {
+            sitePreloader.classList.add('is-done');
+        }, prefersReducedMotion ? 0 : 140);
+    };
+
+    if (prefersReducedMotion) {
+        finishPreloader();
+    } else {
+        setProgress(24);
+        const startTs = performance.now();
+        const trickle = setInterval(() => {
+            if (finished || pct >= 88) {
+                clearInterval(trickle);
+                return;
+            }
+            setProgress(pct + Math.max(4, (90 - pct) * 0.25));
+        }, 70);
+
+        const triggerDone = () => {
+            clearInterval(trickle);
+            const elapsed = performance.now() - startTs;
+            const minDisplayMs = 280;
+            setTimeout(finishPreloader, Math.max(0, minDisplayMs - elapsed));
+        };
+
+        Promise.race([
+            new Promise((resolve) => {
+                if (document.readyState === 'complete') resolve();
+                else window.addEventListener('load', resolve, { once: true });
+            }),
+            document.fonts?.ready ?? Promise.resolve(),
+            new Promise((resolve) => setTimeout(resolve, 750)),
+        ]).then(triggerDone);
+
+        // Hard fail-safe so slow external resources never block reading
+        setTimeout(() => {
+            clearInterval(trickle);
+            finishPreloader();
+        }, 1100);
+
+        window.addEventListener('pageshow', (e) => {
+            if (e.persisted) {
+                sitePreloader.classList.add('is-done');
+            }
+        });
+    }
+}
+
+/* --------------------------------------------------------------------------
  * 1. Cinematic Scroll Reveals
  * -------------------------------------------------------------------------- */
 const revealElements = Array.from(document.querySelectorAll('[data-reveal]'));
@@ -361,32 +431,67 @@ if (scrollProgress) {
  * -------------------------------------------------------------------------- */
 const filterButtons = document.querySelectorAll('[data-category-filter]');
 const productCards = document.querySelectorAll('[data-product-card]');
+const catalogSkeleton = document.querySelector('[data-catalog-skeleton]');
+const catalogGrid = document.querySelector('[data-catalog-grid]');
+let filterTimer = 0;
 
 if (filterButtons.length && productCards.length) {
+    const applyCategoryCards = (selected) => {
+        productCards.forEach((card) => {
+            const match = selected === 'all' || card.dataset.category === selected;
+            if (match) {
+                card.classList.remove('hidden');
+                requestAnimationFrame(() => {
+                    card.style.opacity = '1';
+                    card.style.transform = 'scale(1)';
+                });
+            } else {
+                card.style.opacity = '0';
+                card.style.transform = 'scale(0.96)';
+                card.classList.add('hidden');
+            }
+        });
+    };
+
     filterButtons.forEach((btn) => {
         btn.addEventListener('click', () => {
             const selected = btn.dataset.categoryFilter;
 
             filterButtons.forEach((b) => {
-                const active = b === btn;
-                b.setAttribute('aria-pressed', active ? 'true' : 'false');
+                b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
             });
 
-            productCards.forEach((card) => {
-                const match = selected === 'all' || card.dataset.category === selected;
-                if (match) {
-                    card.classList.remove('hidden');
-                    requestAnimationFrame(() => {
-                        card.style.opacity = '1';
-                        card.style.transform = 'scale(1)';
-                    });
-                } else {
-                    card.style.opacity = '0';
-                    card.style.transform = 'scale(0.96)';
-                    card.classList.add('hidden');
-                }
-            });
+            if (prefersReducedMotion || !catalogSkeleton || !catalogGrid) {
+                applyCategoryCards(selected);
+                return;
+            }
+
+            clearTimeout(filterTimer);
+            catalogGrid.classList.add('hidden');
+            catalogSkeleton.classList.remove('hidden');
+
+            filterTimer = window.setTimeout(() => {
+                applyCategoryCards(selected);
+                catalogSkeleton.classList.add('hidden');
+                catalogGrid.classList.remove('hidden');
+            }, 150);
         });
+    });
+}
+
+const publicContactForm = document.querySelector('#contacto form[action]');
+if (publicContactForm) {
+    publicContactForm.addEventListener('submit', () => {
+        const submitBtn = publicContactForm.querySelector('[data-contact-submit]');
+        const label = submitBtn?.querySelector('[data-submit-label]');
+        const icon = submitBtn?.querySelector('[data-submit-icon]');
+        const spinner = submitBtn?.querySelector('[data-submit-spinner]');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            if (label) label.textContent = 'Enviando consulta…';
+            icon?.classList.add('hidden');
+            spinner?.classList.remove('hidden');
+        }
     });
 }
 
@@ -791,7 +896,8 @@ if (siteEditor) {
             }
         });
 
-        const waValid = contact.whatsapp.length >= 8 && contact.whatsapp.length <= 15;
+        const localWaDigits = contact.whatsapp.startsWith('51') ? contact.whatsapp.slice(2) : contact.whatsapp;
+        const waValid = /^519\d{8}$/.test(contact.whatsapp);
         if (waTopBadge) {
             waTopBadge.textContent = waValid ? `+${contact.whatsapp}` : 'Sin configurar';
             waTopBadge.classList.toggle('text-emerald-300', waValid);
@@ -803,9 +909,8 @@ if (siteEditor) {
             waTestLink.classList.toggle('opacity-40', !waValid);
         }
         if (waHelper && getField('contact', 'whatsapp')) {
-            const rawVal = getField('contact', 'whatsapp').value.trim();
-            if (rawVal && !waValid) {
-                waHelper.textContent = 'Ingresa entre 8 y 15 dígitos válidos con código de país (ej. 51987654321).';
+            if (localWaDigits.length > 0 && !waValid) {
+                waHelper.textContent = 'Ingresa un celular peruano de 9 dígitos después de +51 (ej. +51987654321).';
                 waHelper.classList.add('text-amber-300');
                 waHelper.classList.remove('text-zinc-400');
             } else if (waValid) {
@@ -813,7 +918,7 @@ if (siteEditor) {
                 waHelper.classList.remove('text-amber-300');
                 waHelper.classList.add('text-zinc-400');
             } else {
-                waHelper.textContent = 'Si queda vacío, el formulario solo registra la consulta en Consultas web sin abrir WhatsApp.';
+                waHelper.textContent = 'Si queda solo +51, el formulario solo registra la consulta en Consultas web sin abrir WhatsApp.';
                 waHelper.classList.remove('text-amber-300');
                 waHelper.classList.add('text-zinc-400');
             }
@@ -1151,3 +1256,382 @@ if (siteEditor) {
     updateCharCounters();
     syncPreview();
 }
+
+/* --------------------------------------------------------------------------
+ * 15. Admin Users & RBAC Matrix Helpers
+ * -------------------------------------------------------------------------- */
+const roleSelect = document.querySelector('[data-user-role-select]');
+const rolePreview = document.querySelector('[data-role-preview]');
+
+if (roleSelect && rolePreview) {
+    const badgeEl = rolePreview.querySelector('[data-role-preview-badge]');
+    const titleEl = rolePreview.querySelector('[data-role-preview-title]');
+    const descEl = rolePreview.querySelector('[data-role-preview-desc]');
+    const countEl = rolePreview.querySelector('[data-role-preview-count]');
+    const listEl = rolePreview.querySelector('[data-role-preview-perms]');
+
+    const renderRolePreview = () => {
+        const option = roleSelect.selectedOptions[0];
+        if (!option) return;
+
+        let meta = null;
+        try {
+            meta = JSON.parse(option.dataset.roleMeta || 'null');
+        } catch {
+            meta = null;
+        }
+        if (!meta) return;
+
+        if (titleEl) titleEl.textContent = meta.name || 'Rol seleccionado';
+        if (descEl) descEl.textContent = meta.description || 'Sin descripción registrada.';
+        if (badgeEl) {
+            badgeEl.textContent = meta.is_super_admin ? 'Acceso total' : 'RBAC granular';
+            badgeEl.className = `inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider ${meta.badge_class || 'border-fuchsia-400/25 bg-fuchsia-500/12 text-fuchsia-300'}`;
+        }
+
+        const perms = Array.isArray(meta.permissions) ? meta.permissions : [];
+        if (countEl) {
+            countEl.textContent = meta.is_super_admin
+                ? 'Todos los módulos'
+                : `${perms.length} ${perms.length === 1 ? 'permiso activo' : 'permisos activos'}`;
+        }
+
+        if (listEl) {
+            listEl.innerHTML = '';
+            if (meta.is_super_admin) {
+                const pill = document.createElement('span');
+                pill.className = 'inline-flex items-center gap-1.5 rounded-xl border border-fuchsia-400/25 bg-fuchsia-500/10 px-2.5 py-1 text-[11px] font-bold text-fuchsia-200';
+                pill.textContent = 'Control absoluto del sistema, usuarios y roles';
+                listEl.appendChild(pill);
+            } else if (!perms.length) {
+                const empty = document.createElement('span');
+                empty.className = 'text-[11px] text-zinc-500';
+                empty.textContent = 'Este rol aún no tiene permisos marcados.';
+                listEl.appendChild(empty);
+            } else {
+                perms.forEach((p) => {
+                    const chip = document.createElement('span');
+                    chip.className = 'inline-flex items-center rounded-lg border border-white/10 bg-white/[.04] px-2 py-1 text-[11px] font-semibold text-zinc-200';
+                    chip.textContent = p;
+                    listEl.appendChild(chip);
+                });
+            }
+        }
+    };
+
+    roleSelect.addEventListener('change', renderRolePreview);
+    renderRolePreview();
+}
+
+const roleMatrixForm = document.querySelector('[data-role-matrix-form]');
+if (roleMatrixForm) {
+    const nameInput = roleMatrixForm.querySelector('[data-role-name-input]');
+    const slugInput = roleMatrixForm.querySelector('[data-role-slug-input]');
+    const selectedCountEl = roleMatrixForm.querySelector('[data-perm-selected-count]');
+    const moduleCards = Array.from(roleMatrixForm.querySelectorAll('[data-perm-module-card]'));
+    const allCheckboxes = Array.from(roleMatrixForm.querySelectorAll('[data-perm-checkbox]'));
+
+    const slugify = (val) => val
+        .toString()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 80);
+
+    if (nameInput && slugInput && !slugInput.readOnly && !slugInput.disabled) {
+        if (slugInput.value.trim() !== '') {
+            slugInput.dataset.touched = 'true';
+        }
+        slugInput.addEventListener('input', () => {
+            slugInput.dataset.touched = slugInput.value.trim() !== '' ? 'true' : '';
+        });
+        nameInput.addEventListener('input', () => {
+            if (!slugInput.dataset.touched) {
+                slugInput.value = slugify(nameInput.value);
+            }
+        });
+    }
+
+    const syncMatrixCounts = () => {
+        const checkedTotal = allCheckboxes.filter((cb) => cb.checked).length;
+        if (selectedCountEl) {
+            selectedCountEl.textContent = String(checkedTotal);
+        }
+
+        moduleCards.forEach((card) => {
+            const cbs = Array.from(card.querySelectorAll('[data-perm-checkbox]'));
+            const checkedCount = cbs.filter((cb) => cb.checked).length;
+            const modToggle = card.querySelector('[data-module-toggle]');
+            const modCounter = card.querySelector('[data-module-counter]');
+
+            if (modCounter) {
+                modCounter.textContent = `${checkedCount}/${cbs.length}`;
+            }
+            if (modToggle) {
+                modToggle.checked = cbs.length > 0 && checkedCount === cbs.length;
+                modToggle.indeterminate = checkedCount > 0 && checkedCount < cbs.length;
+            }
+        });
+    };
+
+    allCheckboxes.forEach((cb) => cb.addEventListener('change', syncMatrixCounts));
+
+    roleMatrixForm.querySelectorAll('[data-module-toggle]').forEach((modToggle) => {
+        modToggle.addEventListener('change', () => {
+            const card = modToggle.closest('[data-perm-module-card]');
+            if (!card) return;
+            card.querySelectorAll('[data-perm-checkbox]:not(:disabled)').forEach((cb) => {
+                cb.checked = modToggle.checked;
+            });
+            syncMatrixCounts();
+        });
+    });
+
+    roleMatrixForm.querySelector('[data-perm-select-all]')?.addEventListener('click', () => {
+        allCheckboxes.forEach((cb) => {
+            if (!cb.disabled) cb.checked = true;
+        });
+        syncMatrixCounts();
+    });
+
+    roleMatrixForm.querySelector('[data-perm-select-none]')?.addEventListener('click', () => {
+        allCheckboxes.forEach((cb) => {
+            if (!cb.disabled) cb.checked = false;
+        });
+        syncMatrixCounts();
+    });
+
+    syncMatrixCounts();
+}
+
+/* --------------------------------------------------------------------------
+ * 16. Peruvian Phone (+51) Lock & Strict Numeric Anti-Letters Guard
+ * -------------------------------------------------------------------------- */
+const normalizePeruPhoneInput = (rawValue) => {
+    const digits = String(rawValue || '').replace(/\D+/g, '');
+    const local = digits.startsWith('51') ? digits.slice(2, 11) : digits.slice(0, 9);
+
+    return `+51${local}`;
+};
+
+document.querySelectorAll('[data-peru-phone]').forEach((input) => {
+    const PREFIX = '+51';
+    const isOptional = input.dataset.peruPhone === 'optional';
+    const form = input.closest('form');
+
+    input.value = normalizePeruPhoneInput(input.value);
+
+    const clampCaret = () => {
+        requestAnimationFrame(() => {
+            if (document.activeElement !== input) return;
+            if (input.selectionStart !== null && input.selectionStart < PREFIX.length) {
+                const end = Math.max(PREFIX.length, input.selectionEnd ?? PREFIX.length);
+                input.setSelectionRange(PREFIX.length, end);
+            }
+        });
+    };
+
+    input.addEventListener('focus', clampCaret);
+    input.addEventListener('click', clampCaret);
+
+    input.addEventListener('keydown', (e) => {
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+        const navKeys = ['Tab', 'Enter', 'Escape', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'];
+        if (navKeys.includes(e.key)) {
+            if (e.key === 'Home') {
+                e.preventDefault();
+                input.setSelectionRange(PREFIX.length, PREFIX.length);
+            }
+            return;
+        }
+
+        const start = input.selectionStart ?? PREFIX.length;
+        const end = input.selectionEnd ?? PREFIX.length;
+
+        if (e.key === 'Backspace') {
+            if (start <= PREFIX.length && end <= PREFIX.length) {
+                e.preventDefault();
+            } else if (start < PREFIX.length && end > PREFIX.length) {
+                e.preventDefault();
+                input.value = PREFIX + input.value.slice(end);
+                input.setSelectionRange(PREFIX.length, PREFIX.length);
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+            return;
+        }
+
+        if (e.key === 'Delete') {
+            if (start < PREFIX.length) {
+                e.preventDefault();
+            }
+            return;
+        }
+
+        if (e.key.length === 1) {
+            if (!/^\d$/.test(e.key)) {
+                e.preventDefault();
+                return;
+            }
+            const selectionLen = Math.max(0, end - start);
+            if (input.value.length - selectionLen >= 12) {
+                e.preventDefault();
+            }
+        }
+    });
+
+    input.addEventListener('paste', (e) => {
+        const text = e.clipboardData?.getData('text') || '';
+        const pastedDigits = text.replace(/\D+/g, '');
+        e.preventDefault();
+        if (!pastedDigits) return;
+
+        const currentLocal = input.value.slice(PREFIX.length);
+        let nextValue;
+
+        if (pastedDigits.length >= 11 && pastedDigits.startsWith('51')) {
+            nextValue = normalizePeruPhoneInput(pastedDigits);
+        } else if (pastedDigits.length === 9 && pastedDigits.startsWith('9') && currentLocal === '') {
+            nextValue = `${PREFIX}${pastedDigits}`;
+        } else {
+            const start = Math.max(PREFIX.length, input.selectionStart ?? input.value.length);
+            const end = Math.max(start, input.selectionEnd ?? start);
+            const merged = input.value.slice(0, start) + pastedDigits + input.value.slice(end);
+            nextValue = normalizePeruPhoneInput(merged);
+        }
+
+        input.value = nextValue;
+        input.setSelectionRange(nextValue.length, nextValue.length);
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+
+    input.addEventListener('input', () => {
+        const normalized = normalizePeruPhoneInput(input.value);
+        if (input.value !== normalized) {
+            input.value = normalized;
+            if (document.activeElement === input) {
+                input.setSelectionRange(normalized.length, normalized.length);
+            }
+        }
+    });
+
+    if (form && isOptional) {
+        form.addEventListener('submit', () => {
+            if (input.value.trim() === PREFIX) {
+                input.value = '';
+            }
+        });
+    }
+});
+
+document.querySelectorAll('[data-numeric-only]').forEach((input) => {
+    input.addEventListener('keydown', (e) => {
+        if (input.dataset.numericOnly !== 'true') return;
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        if (e.key.length === 1 && !/^\d$/.test(e.key)) {
+            e.preventDefault();
+        }
+    });
+});
+
+document.querySelectorAll('[data-person-name]').forEach((input) => {
+    const allowedChar = /^[\p{L}\s.'-]$/u;
+
+    const sanitizePersonName = (val) =>
+        String(val || '')
+            .replace(/[^\p{L}\s.'-]/gu, '')
+            .replace(/--+/g, '-')
+            .replace(/^[^\p{L}]+/u, '');
+
+    input.addEventListener('keydown', (e) => {
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        if (e.key.length !== 1) return;
+
+        if (!allowedChar.test(e.key)) {
+            e.preventDefault();
+            return;
+        }
+
+        const start = input.selectionStart ?? input.value.length;
+        if (start === 0 && !/^\p{L}$/u.test(e.key)) {
+            e.preventDefault();
+            return;
+        }
+        if (e.key === '-' && start > 0 && input.value[start - 1] === '-') {
+            e.preventDefault();
+        }
+    });
+
+    input.addEventListener('input', () => {
+        const cleaned = sanitizePersonName(input.value);
+        if (input.value !== cleaned) {
+            input.value = cleaned;
+        }
+    });
+});
+
+/* --------------------------------------------------------------------------
+ * 17. Ribbon Type 3D Satin Band (Lazy-loaded above Footer)
+ * -------------------------------------------------------------------------- */
+document.querySelectorAll('[data-ribbon-type]').forEach((ribbonStage) => {
+    const bootRibbon = () => {
+        import('./ribbon-type')
+            .then(({ initRibbonType }) => {
+                initRibbonType(ribbonStage, { prefersReducedMotion });
+            })
+            .catch(() => {
+                ribbonStage.querySelector('[data-ribbon-fallback]')?.classList.remove('hidden');
+            });
+    };
+
+    if ('IntersectionObserver' in window) {
+        const rect = ribbonStage.getBoundingClientRect();
+        if (rect.top <= window.innerHeight + 480) {
+            bootRibbon();
+        } else {
+            const lazyObserver = new IntersectionObserver((entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        lazyObserver.disconnect();
+                        bootRibbon();
+                    }
+                });
+            }, { rootMargin: '480px 0px' });
+            lazyObserver.observe(ribbonStage);
+        }
+    } else {
+        bootRibbon();
+    }
+});
+
+/* --------------------------------------------------------------------------
+ * 18. Matrix Infinite Carousel Banner (Section 01 · Sobre nosotros)
+ * -------------------------------------------------------------------------- */
+document.querySelectorAll('[data-matrix-carousel]').forEach((carouselRoot) => {
+    const bootCarousel = () => {
+        import('./matrix-carousel').then(({ initMatrixCarousel }) => {
+            initMatrixCarousel(carouselRoot, { prefersReducedMotion });
+        });
+    };
+
+    if ('IntersectionObserver' in window) {
+        const rect = carouselRoot.getBoundingClientRect();
+        if (rect.top <= window.innerHeight + 360) {
+            bootCarousel();
+        } else {
+            const io = new IntersectionObserver((entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        io.disconnect();
+                        bootCarousel();
+                    }
+                });
+            }, { rootMargin: '360px 0px' });
+            io.observe(carouselRoot);
+        }
+    } else {
+        bootCarousel();
+    }
+});
