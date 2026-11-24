@@ -2,33 +2,65 @@ $ErrorActionPreference = 'Stop'
 
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $toolsPath = Join-Path $projectRoot '.tools'
-$phpVersion = '8.3.36-1'
-$phpPath = Join-Path $toolsPath "php-$phpVersion-nts-Win32-vs16-x64"
-$phpExecutable = Join-Path $phpPath 'php.exe'
-$phpIni = Join-Path $phpPath 'php.ini'
+$phpIni = $null
+$phpExecutable = $null
 $composerPath = Join-Path $toolsPath 'composer.phar'
 
 New-Item -ItemType Directory -Path $toolsPath -Force | Out-Null
 
-if (-not (Test-Path $phpExecutable)) {
-    if (Test-Path $phpPath) {
-        throw "La carpeta de PHP existe pero no contiene php.exe: $phpPath. Revisa esa carpeta antes de continuar."
+$existingPhpDir = Get-ChildItem -Path $toolsPath -Directory -Filter 'php-8.3.*-nts-Win32-vs16-x64' -ErrorAction SilentlyContinue |
+    Sort-Object Name -Descending |
+    Select-Object -First 1
+
+if ($existingPhpDir -and (Test-Path (Join-Path $existingPhpDir.FullName 'php.exe'))) {
+    $phpPath = $existingPhpDir.FullName
+} else {
+    $archiveName = $null
+    try {
+        $releasesHtml = (Invoke-WebRequest -Uri 'https://downloads.php.net/~windows/releases/' -UseBasicParsing -TimeoutSec 15).Content
+        $archiveMatch = [regex]::Matches($releasesHtml, 'php-8\.3\.[0-9\-]+-nts-Win32-vs16-x64\.zip') |
+            ForEach-Object { $_.Value } |
+            Select-Object -Unique |
+            Sort-Object -Descending |
+            Select-Object -First 1
+        if ($archiveMatch) {
+            $archiveName = $archiveMatch
+        }
+    } catch {
+        # Fallback below if directory listing is unreachable
     }
 
-    $archive = Join-Path $toolsPath "php-$phpVersion-nts-Win32-vs16-x64.zip"
-    try {
-        Invoke-WebRequest `
-            -Uri "https://downloads.php.net/~windows/releases/php-$phpVersion-nts-Win32-vs16-x64.zip" `
-            -OutFile $archive `
-            -UseBasicParsing
-        Expand-Archive -LiteralPath $archive -DestinationPath $phpPath
+    if (-not $archiveName) {
+        $archiveName = 'php-8.3.37-nts-Win32-vs16-x64.zip'
     }
-    finally {
-        if (Test-Path $archive) {
-            Remove-Item -LiteralPath $archive
+
+    $phpFolderName = $archiveName -replace '\.zip$', ''
+    $phpPath = Join-Path $toolsPath $phpFolderName
+    $phpExecutable = Join-Path $phpPath 'php.exe'
+
+    if (-not (Test-Path $phpExecutable)) {
+        if (Test-Path $phpPath) {
+            throw "La carpeta de PHP existe pero no contiene php.exe: $phpPath. Revisa esa carpeta antes de continuar."
+        }
+
+        $archive = Join-Path $toolsPath $archiveName
+        try {
+            Invoke-WebRequest `
+                -Uri "https://downloads.php.net/~windows/releases/$archiveName" `
+                -OutFile $archive `
+                -UseBasicParsing
+            Expand-Archive -LiteralPath $archive -DestinationPath $phpPath
+        }
+        finally {
+            if (Test-Path $archive) {
+                Remove-Item -LiteralPath $archive
+            }
         }
     }
 }
+
+$phpExecutable = Join-Path $phpPath 'php.exe'
+$phpIni = Join-Path $phpPath 'php.ini'
 
 if (-not (Test-Path $phpIni)) {
     @"
@@ -88,16 +120,26 @@ MAIL_MAILER=log
 '@ | Set-Content -LiteralPath $isolatedEnvPath -Encoding ASCII
 }
 
+$isolatedDbPath = Join-Path $projectRoot 'database\database-isolated.sqlite'
+if (-not (Test-Path $isolatedDbPath)) {
+    New-Item -ItemType File -Path $isolatedDbPath -Force | Out-Null
+}
+
 Set-Location $projectRoot
 $env:APP_ENV = 'isolated'
-& $phpExecutable -c $phpIni $composerPath install --no-interaction --prefer-dist
-if ($LASTEXITCODE -ne 0) {
-    throw 'Composer no pudo instalar las dependencias con PHP portátil.'
+$env:DB_CONNECTION = 'sqlite'
+$env:DB_DATABASE = $isolatedDbPath
+
+if (-not (Test-Path (Join-Path $projectRoot 'vendor\autoload.php'))) {
+    & $phpExecutable -c $phpIni $composerPath install --no-interaction --prefer-dist
+    if ($LASTEXITCODE -ne 0) {
+        throw 'Composer no pudo instalar las dependencias con PHP portátil.'
+    }
 }
 
 $isolatedEnv = Get-Content -LiteralPath $isolatedEnvPath -Raw
-if ($isolatedEnv -notmatch '(?m)^APP_KEY=.+$') {
-    & $phpExecutable -c $phpIni 'artisan' 'key:generate'
+if ($isolatedEnv -notmatch '(?m)^APP_KEY=base64:\S+') {
+    & $phpExecutable -c $phpIni 'artisan' 'key:generate' '--force'
     if ($LASTEXITCODE -ne 0) {
         throw 'No se pudo generar la clave para el entorno aislado.'
     }
@@ -106,14 +148,14 @@ if ($isolatedEnv -notmatch '(?m)^APP_KEY=.+$') {
 
 $testEnvPath = Join-Path $projectRoot '.env.testing'
 if (-not (Test-Path $testEnvPath)) {
-    $keyMatch = [regex]::Match($isolatedEnv, '(?m)^APP_KEY=(.+)$')
+    $keyMatch = [regex]::Match($isolatedEnv, '(?m)^APP_KEY=(\S+)')
     if (-not $keyMatch.Success) {
         throw 'No se encontró APP_KEY en .env.isolated para configurar las pruebas.'
     }
 
     @"
 APP_ENV=testing
-APP_KEY=$($keyMatch.Groups[1].Value)
+APP_KEY=$($keyMatch.Groups[1].Value.Trim())
 APP_DEBUG=true
 DB_CONNECTION=sqlite
 DB_DATABASE=:memory:
@@ -128,13 +170,21 @@ MAIL_MAILER=array
 if ($LASTEXITCODE -ne 0) {
     throw 'No se pudieron aplicar las migraciones al SQLite aislado.'
 }
+if (Test-Path (Join-Path $projectRoot 'database\seeders\CategorySeeder.php')) {
+    & $phpExecutable -c $phpIni 'artisan' 'db:seed' '--class=CategorySeeder' '--force'
+    if ($LASTEXITCODE -ne 0) {
+        throw 'No se pudieron sembrar las categorías iniciales en el SQLite aislado.'
+    }
+}
 
 if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
     throw 'Node.js y npm son necesarios para compilar los recursos de Vite.'
 }
-npm ci
-if ($LASTEXITCODE -ne 0) {
-    throw 'npm ci no pudo instalar las dependencias del frontend.'
+if (-not (Test-Path (Join-Path $projectRoot 'node_modules'))) {
+    npm ci
+    if ($LASTEXITCODE -ne 0) {
+        throw 'npm ci no pudo instalar las dependencias del frontend.'
+    }
 }
 npm run build
 if ($LASTEXITCODE -ne 0) {

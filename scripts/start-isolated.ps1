@@ -1,7 +1,11 @@
 $ErrorActionPreference = 'Stop'
 
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
-$phpPath = Join-Path $projectRoot '.tools\php-8.3.36-1-nts-Win32-vs16-x64'
+$toolsPath = Join-Path $projectRoot '.tools'
+$phpDir = Get-ChildItem -Path $toolsPath -Directory -Filter 'php-8.3.*-nts-Win32-vs16-x64' -ErrorAction SilentlyContinue |
+    Sort-Object Name -Descending |
+    Select-Object -First 1
+$phpPath = if ($phpDir) { $phpDir.FullName } else { Join-Path $toolsPath 'php-8.3.37-nts-Win32-vs16-x64' }
 $phpExecutable = Join-Path $phpPath 'php.exe'
 $phpIni = Join-Path $phpPath 'php.ini'
 
