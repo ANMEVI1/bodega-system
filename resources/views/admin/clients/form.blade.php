@@ -108,18 +108,21 @@
                     <div class="grid gap-4 sm:grid-cols-2">
                         <label class="block text-xs font-bold text-zinc-300">
                             WhatsApp
-                            <input class="field font-mono-num mt-2"
-                                   name="phone"
-                                   type="tel"
-                                   value="{{ old('phone', $client->exists ? $client->whatsappPhone() : '') }}"
-                                   maxlength="15"
-                                   pattern="(9[0-9]{8}|[1-9][0-9]{9,14})"
-                                   inputmode="numeric"
-                                   data-numeric-only="true"
-                                   autocomplete="tel"
-                                   placeholder="912345678 o 51912345678"
-                                   required>
-                            <span class="mt-1.5 block text-[11px] font-normal leading-5 text-zinc-500">Solo números. En Perú escribe los 9 dígitos; para otro país incluye el código de país.</span>
+                            <div class="mt-2 flex items-center gap-2">
+                                <span class="font-mono-num inline-flex h-11 shrink-0 items-center rounded-2xl border border-white/10 bg-white/[.04] px-3 text-xs font-extrabold text-zinc-300">+</span>
+                                <input class="field font-mono-num"
+                                       name="phone"
+                                       type="tel"
+                                       value="{{ old('phone', $client->exists ? $client->whatsappPhone() : '51') }}"
+                                       maxlength="15"
+                                       pattern="(9[0-9]{8}|[1-9][0-9]{9,14})"
+                                       inputmode="numeric"
+                                       data-numeric-only="true"
+                                       autocomplete="tel"
+                                       placeholder="51912345678"
+                                       required>
+                            </div>
+                            <span class="mt-1.5 block text-[11px] font-normal leading-5 text-zinc-500">Solo números (prefijo 51 preescrito para Perú: 519XXXXXXXX). Para otro país cambia el código numérico.</span>
                             @error('phone') <span class="mt-1 block text-[11px] font-medium text-rose-300">{{ $message }}</span> @enderror
                         </label>
 

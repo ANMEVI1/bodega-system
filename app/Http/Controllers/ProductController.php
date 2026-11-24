@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Support\InputGuard;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -19,9 +20,10 @@ class ProductController extends Controller
             ->with('categoryRelation')
             ->withSum(['sales as units_sold' => fn ($q) => $q->where('status', 'paid')], 'quantity')
             ->when($request->string('q')->trim()->value(), function ($q, $term) {
-                $q->where(fn ($sub) => $sub->where('name', 'like', "%{$term}%")
-                    ->orWhere('sku', 'like', "%{$term}%")
-                    ->orWhere('category', 'like', "%{$term}%"));
+                $escaped = InputGuard::escapeLike($term);
+                $q->where(fn ($sub) => $sub->where('name', 'like', "%{$escaped}%")
+                    ->orWhere('sku', 'like', "%{$escaped}%")
+                    ->orWhere('category', 'like', "%{$escaped}%"));
             })
             ->when($request->string('category')->trim()->value(), fn ($q, $cat) => $q->where('category', $cat))
             ->when($request->has('active') && $request->input('active') !== '', fn ($q) => $q->where('active', $request->boolean('active')));

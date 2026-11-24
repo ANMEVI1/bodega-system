@@ -3,29 +3,34 @@
 namespace App\Providers;
 
 use App\Models\ContactSubmission;
+use App\Models\Permission;
 use App\Models\Product;
+use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
     public function register(): void
     {
         //
     }
 
-    /**
-     * Bootstrap any application services.
-     */
     public function boot(): void
     {
         Carbon::setLocale('es');
+
+        Gate::before(function (User $user, string $ability): ?bool {
+            if (array_key_exists($ability, Permission::CATALOG)) {
+                return $user->hasPermission($ability);
+            }
+
+            return null;
+        });
 
         View::composer('layouts.admin', function ($view): void {
             if (! Auth::check()) {

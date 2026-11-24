@@ -372,6 +372,8 @@ export function initBodega3DViewer(stageEl, options = {}) {
     const canvas = stageEl.querySelector('[data-bodega-canvas]');
     const posterImg = stageEl.querySelector('[data-bodega-img]');
     const loadingBadge = stageEl.querySelector('[data-bodega-loading]');
+    const progressBar = stageEl.querySelector('[data-bodega-progress-bar]');
+    const progressText = stageEl.querySelector('[data-bodega-progress-text]');
     const hoverTip = stageEl.querySelector('[data-bodega-hover-tip]');
     const inspector = stageEl.querySelector('[data-bodega-inspector]');
     const focusBtns = Array.from(stageEl.querySelectorAll('[data-bodega-focus]'));
@@ -873,7 +875,14 @@ export function initBodega3DViewer(stageEl, options = {}) {
             loadingBadge?.classList.add('hidden');
             if (hintLabel) hintLabel.textContent = VISTAS.general.hint;
         },
-        undefined,
+        (xhr) => {
+            if (!progressBar || !progressText) return;
+            const total = xhr.total || 0;
+            const ratio = total > 0 ? Math.min(0.98, xhr.loaded / total) : Math.min(0.9, (xhr.loaded || 0) / (4.5 * 1024 * 1024));
+            const pct = Math.max(8, Math.round(ratio * 100));
+            progressBar.style.width = `${pct}%`;
+            progressText.textContent = `${pct}%`;
+        },
         () => {
             loadingBadge?.classList.add('hidden');
             envTarget.dispose();

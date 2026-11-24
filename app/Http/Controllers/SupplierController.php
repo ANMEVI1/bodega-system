@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Supplier;
 use App\Models\SupplierPurchase;
+use App\Support\InputGuard;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -22,6 +23,7 @@ class SupplierController extends Controller
         $hasPaymentTerms = Schema::hasColumn('suppliers', 'payment_terms');
 
         $search = $request->string('q')->trim()->value();
+        $escapedSearch = $search !== '' ? InputGuard::escapeLike($search) : '';
         $specialty = $request->string('specialty')->trim()->value();
         $status = $request->string('status')->trim()->value();
         $paymentTerms = $request->string('payment_terms')->trim()->value();
@@ -31,19 +33,19 @@ class SupplierController extends Controller
             ->withSum('purchases', 'total')
             ->withSum('purchases', 'quantity')
             ->withCount('purchases')
-            ->when($search !== '', function ($q) use ($search, $hasTaxId, $hasAddress): void {
-                $q->where(function ($sub) use ($search, $hasTaxId, $hasAddress): void {
-                    $sub->where('name', 'like', "%{$search}%")
-                        ->orWhere('contact_name', 'like', "%{$search}%")
-                        ->orWhere('specialty', 'like', "%{$search}%")
-                        ->orWhere('phone', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%");
+            ->when($search !== '', function ($q) use ($escapedSearch, $hasTaxId, $hasAddress): void {
+                $q->where(function ($sub) use ($escapedSearch, $hasTaxId, $hasAddress): void {
+                    $sub->where('name', 'like', "%{$escapedSearch}%")
+                        ->orWhere('contact_name', 'like', "%{$escapedSearch}%")
+                        ->orWhere('specialty', 'like', "%{$escapedSearch}%")
+                        ->orWhere('phone', 'like', "%{$escapedSearch}%")
+                        ->orWhere('email', 'like', "%{$escapedSearch}%");
 
                     if ($hasTaxId) {
-                        $sub->orWhere('tax_id', 'like', "%{$search}%");
+                        $sub->orWhere('tax_id', 'like', "%{$escapedSearch}%");
                     }
                     if ($hasAddress) {
-                        $sub->orWhere('address', 'like', "%{$search}%");
+                        $sub->orWhere('address', 'like', "%{$escapedSearch}%");
                     }
                 });
             })
@@ -192,11 +194,11 @@ class SupplierController extends Controller
 
     private function validated(Request $request): array
     {
-        return $request->validate([
+        $data = $request->validate([
             'name' => ['required', 'string', 'max:160'],
-            'tax_id' => ['nullable', 'string', 'max:32'],
+            'tax_id' => ['nullable', 'string', 'max:32', 'regex:/\A[0-9A-Za-z\-]*\z/'],
             'contact_name' => ['nullable', 'string', 'max:120'],
-            'phone' => ['required', 'string', 'min:6', 'max:32'],
+            'phone' => ['required', 'string', 'max:20'],
             'email' => ['nullable', 'email', 'max:255'],
             'address' => ['nullable', 'string', 'max:255'],
             'specialty' => ['nullable', 'string', 'max:160'],
@@ -205,5 +207,9 @@ class SupplierController extends Controller
             'whatsapp_template' => ['nullable', Rule::in(array_keys(Supplier::WHATSAPP_TEMPLATES))],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
+
+        $data['phone'] = (string) InputGuard::normalizePeruPhone($data['phone'], required: true, field: 'phone');
+
+        return $data;
     }
 }

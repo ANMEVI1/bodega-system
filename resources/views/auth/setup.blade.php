@@ -12,7 +12,17 @@
         @csrf
         <label class="block text-xs font-bold text-zinc-300">
             Nombre completo
-            <input class="field mt-2" name="name" value="{{ old('name') }}" maxlength="120" placeholder="Ej. Camila Mendoza" required autofocus>
+            <input class="field mt-2"
+                   name="name"
+                   value="{{ old('name') }}"
+                   maxlength="120"
+                   pattern="[A-Za-zÁÉÍÓÚÜÑáéíóúüñÀ-ÿ\s'\.\-]+"
+                   data-person-name="true"
+                   title="El nombre solo admite letras y espacios (no se permiten números)"
+                   autocomplete="name"
+                   placeholder="Ej. Camila Mendoza"
+                   required
+                   autofocus>
         </label>
 
         <label class="block text-xs font-bold text-zinc-300">

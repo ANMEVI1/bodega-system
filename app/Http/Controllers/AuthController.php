@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Role;
 use App\Models\User;
+use App\Support\InputGuard;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -33,7 +35,13 @@ class AuthController extends Controller
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'confirmed', PasswordRule::min(12)->letters()->mixedCase()->numbers()],
         ]);
-        $admin = User::query()->create($validated);
+        $validated['name'] = InputGuard::normalizePersonName($validated['name'], 'name');
+        $admin = User::query()->create($validated + [
+            'role_id' => Role::ensureDefaultAdminId(),
+            'job_title' => 'Administrador principal',
+            'active' => true,
+            'last_login_at' => now(),
+        ]);
         Auth::login($admin);
         $request->session()->regenerate();
 
@@ -46,9 +54,21 @@ class AuthController extends Controller
         if (! Auth::attempt($credentials, $request->boolean('remember'))) {
             return back()->withErrors(['email' => 'El correo o la contraseña no son correctos.'])->onlyInput('email');
         }
+
+        /** @var User $user */
+        $user = Auth::user();
+        if (! $user->isActive()) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return back()->withErrors(['email' => 'Esta cuenta está desactivada. Contacta al administrador principal.'])->onlyInput('email');
+        }
+
+        $user->forceFill(['last_login_at' => now()])->save();
         $request->session()->regenerate();
 
-        return redirect()->intended(route('admin.dashboard'));
+        return redirect()->intended(route($user->firstAllowedAdminRoute()));
     }
 
     public function logout(Request $request): RedirectResponse
@@ -77,10 +97,16 @@ class AuthController extends Controller
         if (! $admin) {
             return redirect()->route('login')->withErrors(['email' => 'Esta cuenta de Google no está autorizada como administradora.']);
         }
+
+        if (! $admin->isActive()) {
+            return redirect()->route('login')->withErrors(['email' => 'Esta cuenta está desactivada. Contacta al administrador principal.']);
+        }
+
+        $admin->forceFill(['last_login_at' => now()])->save();
         Auth::login($admin);
         $request->session()->regenerate();
 
-        return redirect()->intended(route('admin.dashboard'));
+        return redirect()->intended(route($admin->firstAllowedAdminRoute()));
     }
 
     public function forgotPassword(): View
