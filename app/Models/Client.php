@@ -23,11 +23,24 @@ class Client extends Model
         'source',
         'status',
         'notes',
+        'pending_balance',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'pending_balance' => 'decimal:2',
+        ];
+    }
 
     public function sales(): HasMany
     {
         return $this->hasMany(Sale::class);
+    }
+
+    public function posSales(): HasMany
+    {
+        return $this->hasMany(PosSale::class);
     }
 
     public function latestSale(): HasOne

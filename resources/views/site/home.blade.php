@@ -116,7 +116,7 @@
 
                         {{-- Estado de carga 3D (Spinner circular + progreso real .glb) & expand --}}
                         <div class="pointer-events-none absolute inset-x-3 top-3 z-20 flex items-start justify-between gap-2">
-                            <div data-bodega-loading class="inline-flex min-w-[168px] flex-col gap-1.5 rounded-[2px] border border-[#FAF7EF]/25 bg-[#192315]/92 px-3 py-2 text-[10px] font-semibold text-[#F4EFE4] shadow-md">
+                            <div data-bodega-loading class="inline-flex min-w-42 flex-col gap-1.5 rounded-xs border border-[#FAF7EF]/25 bg-[#192315]/92 px-3 py-2 text-[10px] font-semibold text-[#F4EFE4] shadow-md">
                                 <div class="flex items-center justify-between gap-2">
                                     <span class="inline-flex items-center gap-1.5">
                                         <svg class="editorial-spinner-ring size-3.5 shrink-0" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -127,11 +127,11 @@
                                     </span>
                                     <span data-bodega-progress-text class="font-mono-num text-[#D8B49A]">0%</span>
                                 </div>
-                                <div class="h-[2px] w-full overflow-hidden rounded-full bg-[#FAF7EF]/15">
+                                <div class="h-0.5 w-full overflow-hidden rounded-full bg-[#FAF7EF]/15">
                                     <div data-bodega-progress-bar class="h-full w-[8%] bg-[#D8B49A] transition-[width] duration-150 ease-out"></div>
                                 </div>
                             </div>
-                            <span data-bodega-hover-tip class="hidden rounded-[2px] border border-[#192315]/25 bg-[#FAF7EF] px-2.5 py-1 text-[11px] font-semibold text-[#192315] shadow-md"></span>
+                            <span data-bodega-hover-tip class="hidden rounded-xs border border-[#192315]/25 bg-[#FAF7EF] px-2.5 py-1 text-[11px] font-semibold text-[#192315] shadow-md"></span>
                             <button
                                 type="button"
                                 data-bodega-expand
@@ -286,22 +286,22 @@
                         <span class="font-mono-num text-[10px] font-semibold uppercase tracking-[0.2em] text-[#263822]">
                             Bodega en vivo · {{ count($aboutPillars) }} pilares
                         </span>
-                        <span data-matrix-state class="font-mono-num hidden rounded-[2px] border border-[#192315]/15 bg-[#FAF7EF]/85 px-2 py-0.5 text-[10px] font-semibold text-[#595548] sm:inline-block">
+                        <span data-matrix-state class="font-mono-num hidden rounded-xs border border-[#192315]/15 bg-[#FAF7EF]/85 px-2 py-0.5 text-[10px] font-semibold text-[#595548] sm:inline-block">
                             Flujo activo
                         </span>
                     </div>
 
                     <div class="flex items-center gap-1.5">
                         <button type="button" data-matrix-prev aria-label="Desplazar banner a la izquierda"
-                                class="grid size-8 place-items-center rounded-[2px] border border-[#192315]/18 bg-[#FAF7EF] text-[#192315] transition-colors hover:border-[#192315] hover:bg-white">
+                                class="grid size-8 place-items-center rounded-xs border border-[#192315]/18 bg-[#FAF7EF] text-[#192315] transition-colors hover:border-[#192315] hover:bg-white">
                             <x-icon name="arrow-left" class="size-3.5" />
                         </button>
                         <button type="button" data-matrix-toggle aria-pressed="false"
-                                class="font-mono-num inline-flex h-8 items-center rounded-[2px] border border-[#192315]/18 bg-[#FAF7EF] px-3 text-[10px] font-semibold uppercase tracking-wider text-[#192315] transition-colors hover:border-[#192315] hover:bg-white">
+                                class="font-mono-num inline-flex h-8 items-center rounded-xs border border-[#192315]/18 bg-[#FAF7EF] px-3 text-[10px] font-semibold uppercase tracking-wider text-[#192315] transition-colors hover:border-[#192315] hover:bg-white">
                             Pausar
                         </button>
                         <button type="button" data-matrix-next aria-label="Desplazar banner a la derecha"
-                                class="grid size-8 place-items-center rounded-[2px] border border-[#192315]/18 bg-[#FAF7EF] text-[#192315] transition-colors hover:border-[#192315] hover:bg-white">
+                                class="grid size-8 place-items-center rounded-xs border border-[#192315]/18 bg-[#FAF7EF] text-[#192315] transition-colors hover:border-[#192315] hover:bg-white">
                             <x-icon name="arrow-right" class="size-3.5" />
                         </button>
                     </div>
@@ -311,11 +311,11 @@
                 <div data-matrix-viewport class="matrix-carousel-viewport relative z-10 cursor-grab touch-pan-y overflow-hidden select-none active:cursor-grabbing">
                     <div data-matrix-track class="matrix-carousel-track flex gap-4 pl-4 sm:gap-5 sm:pl-6">
                         @foreach($aboutPillars as $pillar)
-                            <article class="group flex w-[288px] shrink-0 flex-col justify-between rounded-[2px] border border-[#192315]/18 bg-[#FAF7EF]/95 p-6 backdrop-blur-[2px] transition-colors duration-200 hover:border-[#A44A28]/55 hover:bg-white sm:w-[325px]">
+                            <article class="group flex w-[288px] shrink-0 flex-col justify-between rounded-xs border border-[#192315]/18 bg-[#FAF7EF]/95 p-6 backdrop-blur-[2px] transition-colors duration-200 hover:border-[#A44A28]/55 hover:bg-white sm:w-81.25">
                                 <div>
                                     <div class="flex items-center justify-between gap-2 border-b border-[#192315]/12 pb-3">
                                         <span class="font-mono-num text-xs font-semibold text-[#A44A28]">{{ $pillar['num'] }}</span>
-                                        <span data-matrix-tag class="font-mono-num rounded-[2px] border border-[#263822]/20 bg-[#263822]/[0.07] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#263822]">
+                                        <span data-matrix-tag class="font-mono-num rounded-xs border border-[#263822]/20 bg-[#263822]/[0.07] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#263822]">
                                             {{ $pillar['tag'] }}
                                         </span>
                                     </div>
@@ -425,23 +425,23 @@
 
             @if($products->isNotEmpty())
                 {{-- Skeleton loader mostrado brevemente al filtrar categorías --}}
-                <div data-catalog-skeleton class="mt-10 hidden grid gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-hidden="true">
+                <div data-catalog-skeleton class="mt-10 hidden gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-hidden="true">
                     @for($s = 0; $s < 4; $s++)
-                        <div class="flex flex-col justify-between rounded-[2px] border border-[#192315]/14 bg-[#FAF7EF] p-6">
+                        <div class="flex flex-col justify-between rounded-xs border border-[#192315]/14 bg-[#FAF7EF] p-6">
                             <div>
                                 <div class="flex items-center justify-between border-b border-[#192315]/10 pb-3">
-                                    <span class="editorial-skeleton-bar h-3 w-7 rounded-[2px]"></span>
-                                    <span class="editorial-skeleton-bar h-3 w-16 rounded-[2px]"></span>
+                                    <span class="editorial-skeleton-bar h-3 w-7 rounded-xs"></span>
+                                    <span class="editorial-skeleton-bar h-3 w-16 rounded-xs"></span>
                                 </div>
-                                <div class="editorial-skeleton-bar mt-5 h-2.5 w-20 rounded-[2px]"></div>
-                                <div class="editorial-skeleton-bar mt-2.5 h-6 w-4/5 rounded-[2px]"></div>
+                                <div class="editorial-skeleton-bar mt-5 h-2.5 w-20 rounded-xs"></div>
+                                <div class="editorial-skeleton-bar mt-2.5 h-6 w-4/5 rounded-xs"></div>
                             </div>
                             <div class="mt-8 flex items-end justify-between border-t border-[#192315]/10 pt-4">
                                 <div class="space-y-1.5">
-                                    <div class="editorial-skeleton-bar h-5 w-16 rounded-[2px]"></div>
-                                    <div class="editorial-skeleton-bar h-2.5 w-12 rounded-[2px]"></div>
+                                    <div class="editorial-skeleton-bar h-5 w-16 rounded-xs"></div>
+                                    <div class="editorial-skeleton-bar h-2.5 w-12 rounded-xs"></div>
                                 </div>
-                                <div class="editorial-skeleton-bar h-9 w-20 rounded-[2px]"></div>
+                                <div class="editorial-skeleton-bar h-9 w-20 rounded-xs"></div>
                             </div>
                         </div>
                     @endfor
@@ -653,7 +653,7 @@
     <div aria-label="Cinta interactiva Bodega Los Olivos"
          data-ribbon-type
          data-ribbon-phrases='@json($ribbonPhrases)'
-         class="pointer-events-none relative z-30 -mb-[72px] w-full overflow-x-clip pt-3 sm:-mb-[92px] sm:pt-4 lg:-mb-[105px]">
+         class="pointer-events-none relative z-30 -mb-18 w-full overflow-x-clip pt-3 sm:-mb-23 sm:pt-4 lg:-mb-26.25">
         <div class="mx-auto flex max-w-7xl items-center justify-between px-5 pb-1 sm:px-8">
             <span data-ribbon-hint class="font-mono-num text-[10px] font-semibold uppercase tracking-[0.2em] text-[#7A351B]">
                 Toca o arrastra la cinta
@@ -667,10 +667,10 @@
              role="button"
              tabindex="0"
              aria-label="Cinta 3D interactiva: haz clic o arrastra para mover y cambiar mensaje"
-             class="pointer-events-auto relative h-[144px] w-full cursor-grab touch-pan-y select-none active:cursor-grabbing focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A44A28]/50 sm:h-[184px] lg:h-[210px]">
+             class="pointer-events-auto relative h-36 w-full cursor-grab touch-pan-y select-none active:cursor-grabbing focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A44A28]/50 sm:h-46 lg:h-52.5">
             {{-- Skeleton shimmer hasta montar WebGL --}}
             <div data-ribbon-skeleton class="pointer-events-none absolute inset-x-0 top-1/2 mx-auto flex max-w-4xl -translate-y-1/2 items-center gap-3 px-6">
-                <span class="editorial-skeleton-bar h-6 flex-1 rounded-[2px]"></span>
+                <span class="editorial-skeleton-bar h-6 flex-1 rounded-xs"></span>
             </div>
         </div>
 

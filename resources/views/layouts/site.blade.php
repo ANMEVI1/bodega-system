@@ -19,7 +19,7 @@
          role="status"
          aria-live="polite"
          aria-label="Cargando tienda"
-         class="fixed inset-0 z-[70] flex items-center justify-center bg-[#F4EFE4] px-6 text-[#192315] print:hidden">
+         class="fixed inset-0 z-70 flex items-center justify-center bg-[#F4EFE4] px-6 text-[#192315] print:hidden">
         <div class="w-full max-w-xs border border-[#192315]/16 bg-[#FAF7EF] p-6 shadow-sm">
             <div class="flex items-center gap-4">
                 <div class="relative grid size-12 shrink-0 place-items-center">
@@ -36,8 +36,8 @@
                 <span data-preloader-pct class="font-mono-num text-xs font-semibold text-[#A44A28]">0%</span>
             </div>
 
-            <div class="mt-4 h-[3px] w-full overflow-hidden rounded-full bg-[#192315]/12">
-                <div data-preloader-bar class="h-full w-0 bg-gradient-to-r from-[#263822] to-[#A44A28] transition-[width] duration-150 ease-out"></div>
+            <div class="mt-4 h-0.75 w-full overflow-hidden rounded-full bg-[#192315]/12">
+                <div data-preloader-bar class="h-full w-0 bg-linear-to-r from-[#263822] to-[#A44A28] transition-[width] duration-150 ease-out"></div>
             </div>
         </div>
     </div>
@@ -53,7 +53,7 @@
     </div>
 
     {{-- Indicador superior de lectura --}}
-    <div id="scroll-progress" class="fixed inset-x-0 top-0 z-50 h-[2px] origin-left scale-x-0 bg-gradient-to-r from-[#263822] via-[#A44A28] to-[#192315]"></div>
+    <div id="scroll-progress" class="fixed inset-x-0 top-0 z-50 h-0.5 origin-left scale-x-0 bg-linear-to-r from-[#263822] via-[#A44A28] to-[#192315]"></div>
 
     @php
         $contactSection = $sections['contact'];
@@ -64,7 +64,7 @@
     <header class="sticky top-0 z-40 border-b border-[#192315]/12 bg-[#F4EFE4]/92 backdrop-blur-md">
         <nav class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-3.5 sm:px-8" aria-label="Navegación principal">
             <a href="{{ route('home') }}" class="group inline-flex items-center gap-3 text-[#192315] transition-opacity hover:opacity-85">
-                <span class="grid size-9 place-items-center rounded-[2px] bg-[#192315] text-[#F4EFE4]">
+                <span class="grid size-9 place-items-center rounded-xs bg-[#192315] text-[#F4EFE4]">
                     <x-icon name="sprout" class="size-4 text-[#FAF7EF] transition-transform duration-300 group-hover:scale-110" />
                 </span>
                 <span>
@@ -78,10 +78,11 @@
                 <a href="#productos" class="py-1 transition-colors hover:text-[#192315]">Catálogo</a>
                 <a href="#preguntas" class="py-1 transition-colors hover:text-[#192315]">Preguntas</a>
                 <a href="#contacto" class="py-1 transition-colors hover:text-[#192315]">Contacto</a>
+                <a href="{{ route('site.pos') }}" class="py-1 font-bold text-[#A44A28] transition-colors hover:text-[#192315]">Punto de Venta</a>
             </div>
 
             <div class="flex items-center gap-2.5">
-                <a href="{{ route('login') }}" class="inline-flex min-h-[38px] items-center gap-1.5 rounded-[2px] border border-[#192315]/22 bg-[#FAF7EF] px-3 py-1.5 text-xs font-semibold text-[#192315] transition-colors hover:border-[#192315] hover:bg-white">
+                <a href="{{ route('login') }}" class="inline-flex min-h-9.5 items-center gap-1.5 rounded-xs border border-[#192315]/22 bg-[#FAF7EF] px-3 py-1.5 text-xs font-semibold text-[#192315] transition-colors hover:border-[#192315] hover:bg-white">
                     <x-icon name="shield" class="size-3.5 text-[#A44A28]" />
                     <span class="hidden sm:inline">Panel Admin</span>
                     <span class="sm:hidden">Admin</span>
@@ -89,7 +90,7 @@
 
                 <a href="{{ $headerWhatsapp ? 'https://wa.me/'.$headerWhatsapp : '#contacto' }}"
                    @if($headerWhatsapp) target="_blank" rel="noopener" @endif
-                   class="inline-flex min-h-[38px] items-center gap-1.5 rounded-[2px] bg-[#192315] px-3.5 py-1.5 text-xs font-semibold text-[#F4EFE4] transition-colors hover:bg-[#263822]">
+                   class="inline-flex min-h-9.5 items-center gap-1.5 rounded-xs bg-[#192315] px-3.5 py-1.5 text-xs font-semibold text-[#F4EFE4] transition-colors hover:bg-[#263822]">
                     <x-icon name="whatsapp" class="size-3.5 text-[#EAE3D2]" />
                     <span class="hidden sm:inline">WhatsApp</span>
                     <x-icon name="arrow-up-right" class="size-3.5 text-[#D8B49A]" />
@@ -101,13 +102,14 @@
             <a href="#productos" class="shrink-0 transition-colors hover:text-[#192315]">Catálogo</a>
             <a href="#preguntas" class="shrink-0 transition-colors hover:text-[#192315]">Preguntas</a>
             <a href="#contacto" class="shrink-0 transition-colors hover:text-[#192315]">Contacto</a>
+            <a href="{{ route('site.pos') }}" class="shrink-0 font-bold text-[#A44A28] transition-colors hover:text-[#192315]">Punto de Venta</a>
         </div>
     </header>
 
     @if(session('contact_sent'))
-        <div role="status" data-toast class="fixed right-5 top-20 z-50 max-w-md overflow-hidden rounded-[2px] border border-[#192315]/20 bg-[#FAF7EF] p-4 text-sm text-[#192315] shadow-lg transition duration-300">
+        <div role="status" data-toast class="fixed right-5 top-20 z-50 max-w-md overflow-hidden rounded-xs border border-[#192315]/20 bg-[#FAF7EF] p-4 text-sm text-[#192315] shadow-lg transition duration-300">
             <div class="flex items-start gap-3">
-                <span class="grid size-8 shrink-0 place-items-center rounded-[2px] bg-[#192315] text-[#F4EFE4]">
+                <span class="grid size-8 shrink-0 place-items-center rounded-xs bg-[#192315] text-[#F4EFE4]">
                     <x-icon name="check-circle" class="size-4" />
                 </span>
                 <p class="flex-1 text-xs font-semibold leading-5">{{ session('contact_sent') }}</p>
@@ -115,7 +117,7 @@
                     <x-icon name="x" class="size-4" />
                 </button>
             </div>
-            <div class="toast-progress mt-3 h-[2px] w-full bg-[#A44A28]"></div>
+            <div class="toast-progress mt-3 h-0.5 w-full bg-[#A44A28]"></div>
         </div>
     @endif
 
@@ -125,7 +127,7 @@
         <div class="mx-auto grid max-w-7xl gap-10 md:grid-cols-[1.25fr_.85fr_.9fr]">
             <div>
                 <div class="inline-flex items-center gap-3">
-                    <span class="grid size-10 place-items-center rounded-[2px] border border-white/15 bg-[#263822] text-[#F4EFE4]">
+                    <span class="grid size-10 place-items-center rounded-xs border border-white/15 bg-[#263822] text-[#F4EFE4]">
                         <x-icon name="sprout" class="size-5" />
                     </span>
                     <div>
@@ -145,6 +147,7 @@
                     <li><a href="#productos" class="transition-colors hover:text-white">Catálogo disponible</a></li>
                     <li><a href="#preguntas" class="transition-colors hover:text-white">Preguntas frecuentes</a></li>
                     <li><a href="#contacto" class="transition-colors hover:text-white">Contacto</a></li>
+                    <li><a href="{{ route('site.pos') }}" class="transition-colors hover:text-white">Punto de Venta</a></li>
                 </ul>
             </div>
 
@@ -152,7 +155,7 @@
                 <p class="font-semibold uppercase tracking-[0.18em] text-[#D8B49A]">Gestión interna</p>
                 <p class="mt-4 leading-6 text-[#C7C5B8]">Control de inventario, ventas, clientes, proveedores y editor web en tiempo real.</p>
                 <div class="mt-5">
-                    <a href="{{ route('login') }}" class="inline-flex min-h-[38px] items-center gap-2 rounded-[2px] border border-[#F4EFE4]/25 bg-[#F4EFE4]/10 px-4 py-2 text-xs font-semibold text-[#F4EFE4] transition-colors hover:bg-[#F4EFE4] hover:text-[#192315]">
+                    <a href="{{ route('login') }}" class="inline-flex min-h-9.5 items-center gap-2 rounded-xs border border-[#F4EFE4]/25 bg-[#F4EFE4]/10 px-4 py-2 text-xs font-semibold text-[#F4EFE4] transition-colors hover:bg-[#F4EFE4] hover:text-[#192315]">
                         <x-icon name="shield" class="size-3.5" />
                         Acceso administrador
                     </a>
