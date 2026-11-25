@@ -71,6 +71,45 @@ class BodegaFlowsTest extends TestCase
         $this->get(route('admin.suppliers.create'))->assertOk();
     }
 
+    public function test_all_admin_modules_share_the_two_tone_theme(): void
+    {
+        $this->actingAs(User::factory()->create());
+
+        $adminRoutes = [
+            'admin.dashboard',
+            'admin.clients.index',
+            'admin.products.index',
+            'admin.categories.index',
+            'admin.inventory.index',
+            'admin.suppliers.index',
+            'admin.sales.index',
+            'admin.contacts.index',
+            'admin.site.edit',
+        ];
+
+        foreach ($adminRoutes as $routeName) {
+            $this->get(route($routeName))
+                ->assertOk()
+                ->assertSee('admin-two-tone', false)
+                ->assertSee('clients-light clients-light-surface', false);
+        }
+
+        $this->get(route('home'))->assertOk()->assertDontSee('admin-two-tone', false);
+        $this->get(route('login'))->assertOk()->assertDontSee('admin-two-tone', false);
+
+        $this->get(route('admin.clients.index'))
+            ->assertSee('admin-public-link', false)
+            ->assertSee('Empieza por agregar tu primer cliente')
+            ->assertDontSee('<thead', false);
+
+        $this->get(route('admin.clients.index', ['q' => 'cliente inexistente']))
+            ->assertOk()
+            ->assertSee('No encontramos coincidencias')
+            ->assertSee('Limpiar búsqueda');
+
+        $this->get(route('admin.clients.create'))->assertOk();
+    }
+
     public function test_client_form_normalizes_peruvian_mobile_numbers_for_whatsapp(): void
     {
         $this->actingAs(User::factory()->create());
@@ -202,9 +241,60 @@ class BodegaFlowsTest extends TestCase
             ->assertSee('data-numeric-only="true"', false)
             ->assertSee('pattern="(9[0-9]{8}|[1-9][0-9]{9,14})"', false)
             ->assertSee('id="client-document-type" name="document_type" required', false)
+            ->assertSee('value="dni" data-document-for="person" selected', false)
+            ->assertDontSee('Selecciona un documento')
+            ->assertSee('Nombres y apellidos completos')
+            ->assertSee('data-person-name-only="true"', false)
+            ->assertSee('sanitizePersonName()', false)
             ->assertSee('id="client-document-number"', false)
             ->assertSee('· obligatorio', false)
             ->assertSee('updateDocumentValidation()', false);
+    }
+
+    public function test_person_client_name_accepts_unicode_letters_and_rejects_other_characters(): void
+    {
+        $this->actingAs(User::factory()->create());
+
+        $clientData = [
+            'name' => '  María   José Ñahui  ',
+            'client_type' => 'person',
+            'document_type' => 'dni',
+            'document_number' => '12345678',
+            'phone' => '912345678',
+            'preferred_contact' => 'whatsapp',
+            'status' => 'active',
+        ];
+
+        $this->post(route('admin.clients.store'), $clientData)
+            ->assertRedirect(route('admin.clients.index'));
+        $this->assertDatabaseHas('clients', ['name' => 'María José Ñahui']);
+
+        $clientData['name'] = 'María3 José';
+        $this->from(route('admin.clients.create'))
+            ->post(route('admin.clients.store'), $clientData)
+            ->assertRedirect(route('admin.clients.create'))
+            ->assertSessionHasErrors('name');
+
+        $clientData['name'] = 'María-José';
+        $this->from(route('admin.clients.create'))
+            ->post(route('admin.clients.store'), $clientData)
+            ->assertRedirect(route('admin.clients.create'))
+            ->assertSessionHasErrors('name');
+
+        $businessData = [
+            'name' => 'Bodega 24 S.A.C.',
+            'client_type' => 'business',
+            'document_type' => 'ruc',
+            'document_number' => '20123456789',
+            'phone' => '912345678',
+            'preferred_contact' => 'whatsapp',
+            'status' => 'active',
+        ];
+
+        $this->post(route('admin.clients.store'), $businessData)
+            ->assertRedirect(route('admin.clients.index'));
+        $this->assertDatabaseHas('clients', ['name' => 'Bodega 24 S.A.C.']);
+        $this->assertDatabaseCount('clients', 2);
     }
 
     public function test_client_form_separates_person_and_business_fields_and_document_types(): void

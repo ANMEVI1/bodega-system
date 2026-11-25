@@ -95,6 +95,18 @@ class ClientController extends Controller
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
+        if ($data['client_type'] === 'person') {
+            $name = preg_replace('/ +/u', ' ', trim($data['name']));
+
+            if ($name === null || preg_match('/\A[\p{L}\p{M}]+(?: +[\p{L}\p{M}]+)*\z/u', $name) !== 1) {
+                throw ValidationException::withMessages([
+                    'name' => 'Escribe los nombres y apellidos usando solo letras y espacios.',
+                ]);
+            }
+
+            $data['name'] = $name;
+        }
+
         $phone = $data['phone'];
         $peruvianMobile = strlen($phone) === 9 && str_starts_with($phone, '9');
 

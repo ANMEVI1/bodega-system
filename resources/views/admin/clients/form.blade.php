@@ -5,7 +5,8 @@
     @php
         $clientType = old('client_type', $client->client_type ?: 'person');
         $preferredContact = old('preferred_contact', $client->preferred_contact ?: 'whatsapp');
-        $documentType = old('document_type', $client->document_type ?: '');
+        $defaultDocumentType = $clientType === 'business' ? 'ruc' : 'dni';
+        $documentType = old('document_type') ?: ($client->document_type ?: $defaultDocumentType);
     @endphp
 
     <div class="mx-auto max-w-5xl" data-cinema-enter>
@@ -40,7 +41,7 @@
                 <section class="space-y-4 border-b border-white/[.07] py-5">
                     <div>
                         <h2 class="text-sm font-extrabold text-white">Identificación</h2>
-                        <p class="mt-1 text-[11px] text-zinc-500">Los datos fiscales son opcionales y se guardan solo cuando los necesitas.</p>
+                        <p class="mt-1 text-[11px] text-zinc-500">El documento de identidad o fiscal es obligatorio según el tipo de cliente.</p>
                     </div>
 
                     <div class="grid gap-4 sm:grid-cols-2">
@@ -54,8 +55,8 @@
                         </label>
 
                         <label class="block text-xs font-bold text-zinc-300">
-                            <span id="client-name-label">{{ $clientType === 'business' ? 'Razón social' : 'Nombre completo' }}</span>
-                            <input class="field mt-2" id="client-name" name="name" value="{{ old('name', $client->name) }}" maxlength="160" autocomplete="{{ $clientType === 'business' ? 'organization' : 'name' }}" required>
+                            <span id="client-name-label">{{ $clientType === 'business' ? 'Razón social' : 'Nombres y apellidos completos' }}</span>
+                            <input class="field mt-2" id="client-name" name="name" value="{{ old('name', $client->name) }}" maxlength="160" autocomplete="{{ $clientType === 'business' ? 'organization' : 'name' }}" data-person-name-only="{{ $clientType === 'person' ? 'true' : 'false' }}" required>
                             @error('name') <span class="mt-1 block text-[11px] font-medium text-rose-300">{{ $message }}</span> @enderror
                         </label>
                     </div>
@@ -64,7 +65,6 @@
                         <label class="block text-xs font-bold text-zinc-300">
                             Tipo de documento <span class="font-normal text-zinc-500">· obligatorio</span>
                             <select class="field mt-2" id="client-document-type" name="document_type" required>
-                                <option value="" disabled @selected($documentType === '')>Selecciona un documento</option>
                                 <option value="dni" data-document-for="person" @selected($documentType === 'dni')>DNI</option>
                                 <option value="ce" data-document-for="person" @selected($documentType === 'ce')>Carné de extranjería</option>
                                 <option value="passport" data-document-for="person" @selected($documentType === 'passport')>Pasaporte</option>
@@ -260,6 +260,24 @@
             });
         });
 
+        function sanitizePersonName() {
+            const value = clientName.value;
+            const cursorPosition = clientName.selectionStart ?? value.length;
+            const sanitizedValue = value.replace(/[^\p{L}\p{M} ]/gu, '');
+
+            if (sanitizedValue !== value) {
+                const sanitizedCursor = value.slice(0, cursorPosition).replace(/[^\p{L}\p{M} ]/gu, '').length;
+                clientName.value = sanitizedValue;
+                clientName.setSelectionRange(sanitizedCursor, sanitizedCursor);
+            }
+        }
+
+        clientName.addEventListener('input', () => {
+            if (clientName.dataset.personNameOnly === 'true') {
+                sanitizePersonName();
+            }
+        });
+
         function updateClientTypeFields() {
             const type = clientType.value;
 
@@ -280,13 +298,17 @@
             });
 
             if (clientDocumentType.value && !allowedDocumentTypes[type].includes(clientDocumentType.value)) {
-                clientDocumentType.value = '';
+                clientDocumentType.value = allowedDocumentTypes[type][0];
                 clientDocumentNumber.value = '';
             }
 
             const business = type === 'business';
-            clientNameLabel.textContent = business ? 'Razón social' : 'Nombre completo';
+            clientNameLabel.textContent = business ? 'Razón social' : 'Nombres y apellidos completos';
             clientName.autocomplete = business ? 'organization' : 'name';
+            clientName.dataset.personNameOnly = business ? 'false' : 'true';
+            if (!business) {
+                sanitizePersonName();
+            }
             updateDocumentValidation();
         }
 

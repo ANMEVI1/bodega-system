@@ -11,7 +11,7 @@
     <script>document.documentElement.classList.add('js-cinema');</script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="admin-cinema min-h-screen antialiased bg-[#050508] text-zinc-100">
+<body class="admin-cinema admin-two-tone min-h-screen antialiased bg-[#050508] text-zinc-100">
     {{-- Atmospheric backdrop layers --}}
     <div class="fixed inset-0 -z-20 cinema-grid print:hidden"></div>
     <div class="fixed inset-0 z-50 cinema-grain print:hidden"></div>
@@ -82,7 +82,7 @@
 
             <div class="mt-auto space-y-3 pt-4">
                 <a href="{{ route('home') }}" target="_blank" rel="noopener noreferrer"
-                   class="group flex items-center justify-between rounded-2xl border border-amber-300/15 bg-linear-to-r from-amber-400/8 to-orange-500/4 px-4 py-3 text-xs font-bold text-amber-100 transition hover:border-amber-300/30 hover:from-amber-400/14">
+                   class="admin-public-link group flex items-center justify-between rounded-2xl border border-amber-300/15 bg-linear-to-r from-amber-400/8 to-orange-500/4 px-4 py-3 text-xs font-bold text-amber-100 transition hover:border-amber-300/30 hover:from-amber-400/14">
                     <span class="flex items-center gap-2.5">
                         <x-icon name="store" class="size-4 text-amber-300" />
                         <span>Ver página pública</span>
@@ -173,36 +173,38 @@
 
         {{-- Main Content --}}
         <main class="relative mx-auto max-w-370 px-4 pb-28 pt-7 sm:px-7 lg:px-10 lg:pb-12 lg:pt-9">
-            @if(session('success'))
-                <div role="status" data-toast class="mb-6 overflow-hidden rounded-2xl border border-emerald-400/20 bg-emerald-500/9 px-4 py-3.5 text-sm text-emerald-100 shadow-lg transition duration-300">
-                    <div class="flex items-center gap-3">
-                        <x-icon name="check-circle" class="size-5 shrink-0 text-emerald-400" />
-                        <span class="flex-1 text-xs font-semibold sm:text-sm">{{ session('success') }}</span>
-                        <button type="button" data-toast-close class="text-emerald-200/70 hover:text-white" aria-label="Cerrar">
-                            <x-icon name="x" class="size-4" />
-                        </button>
+            <div class="clients-light clients-light-surface">
+                @if(session('success'))
+                    <div role="status" data-toast class="mb-6 overflow-hidden rounded-2xl border border-emerald-400/20 bg-emerald-500/9 px-4 py-3.5 text-sm text-emerald-100 shadow-lg transition duration-300">
+                        <div class="flex items-center gap-3">
+                            <x-icon name="check-circle" class="size-5 shrink-0 text-emerald-400" />
+                            <span class="flex-1 text-xs font-semibold sm:text-sm">{{ session('success') }}</span>
+                            <button type="button" data-toast-close class="text-emerald-200/70 hover:text-white" aria-label="Cerrar">
+                                <x-icon name="x" class="size-4" />
+                            </button>
+                        </div>
+                        <div class="toast-progress mt-2.5 h-0.5 w-full rounded-full bg-emerald-400/70"></div>
                     </div>
-                    <div class="toast-progress mt-2.5 h-0.5 w-full rounded-full bg-emerald-400/70"></div>
-                </div>
-            @endif
+                @endif
 
-            @if($errors->any())
-                <div role="alert" class="mb-6 rounded-2xl border border-rose-400/25 bg-rose-500/9 px-4 py-3.5 text-sm text-rose-100 shadow-lg">
-                    <div class="flex items-start gap-3">
-                        <x-icon name="alert-triangle" class="mt-0.5 size-5 shrink-0 text-rose-400" />
-                        <div>
-                            <p class="text-xs font-extrabold uppercase tracking-wider text-rose-200">Revisa estos datos</p>
-                            <ul class="mt-1.5 list-inside list-disc space-y-0.5 text-xs">
-                                @foreach($errors->all() as $error)
-                                    <li>{{ $error }}</li>
-                                @endforeach
-                            </ul>
+                @if($errors->any())
+                    <div role="alert" class="mb-6 rounded-2xl border border-rose-400/25 bg-rose-500/9 px-4 py-3.5 text-sm text-rose-100 shadow-lg">
+                        <div class="flex items-start gap-3">
+                            <x-icon name="alert-triangle" class="mt-0.5 size-5 shrink-0 text-rose-400" />
+                            <div>
+                                <p class="text-xs font-extrabold uppercase tracking-wider text-rose-200">Revisa estos datos</p>
+                                <ul class="mt-1.5 list-inside list-disc space-y-0.5 text-xs">
+                                    @foreach($errors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
                         </div>
                     </div>
-                </div>
-            @endif
+                @endif
 
-            @yield('content')
+                @yield('content')
+            </div>
         </main>
 
         {{-- Mobile Bottom Navigation --}}

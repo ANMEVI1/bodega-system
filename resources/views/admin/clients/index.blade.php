@@ -30,19 +30,39 @@
     </div>
 
     <section data-reveal class="panel mt-5 overflow-hidden rounded-3xl">
-        <div class="overflow-x-auto">
-            <table class="w-full min-w-[740px] text-left text-xs">
-                <thead class="bg-white/[.03] text-[10px] font-extrabold uppercase tracking-wider text-zinc-500">
-                    <tr>
-                        <th class="px-6 py-4">Cliente</th>
-                        <th class="px-4 py-4">WhatsApp</th>
-                        <th class="px-4 py-4">Compras acumuladas</th>
-                        <th class="px-4 py-4">Estado</th>
-                        <th class="px-6 py-4 text-right">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($clients as $client)
+        @if($clients->isEmpty())
+            <div class="px-6 py-14 text-center sm:px-10 sm:py-16" aria-live="polite">
+                <span class="mx-auto grid size-14 place-items-center rounded-2xl bg-emerald-400/10 text-emerald-300 ring-1 ring-emerald-400/20">
+                    <x-icon :name="request()->filled('q') ? 'search' : 'users'" class="size-6" />
+                </span>
+                @if(request()->filled('q'))
+                    <h2 class="mt-5 text-lg font-extrabold text-white">No encontramos coincidencias</h2>
+                    <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-zinc-500">Prueba con otro nombre, teléfono o correo para encontrar al cliente que buscas.</p>
+                    <a href="{{ route('admin.clients.index') }}" class="btn-subtle mt-5 text-xs">Limpiar búsqueda</a>
+                @else
+                    <p class="mt-5 text-[11px] font-extrabold uppercase tracking-[.18em] text-fuchsia-300">Tu cartera comercial</p>
+                    <h2 class="mt-2 text-xl font-extrabold tracking-tight text-white">Empieza por agregar tu primer cliente</h2>
+                    <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-zinc-500">Organiza sus datos de contacto, registra su información y consulta sus compras desde una sola ficha.</p>
+                    <a href="{{ route('admin.clients.create') }}" class="btn-primary mt-6 text-xs">
+                        <x-icon name="plus" class="size-4" />
+                        Agregar primer cliente
+                    </a>
+                @endif
+            </div>
+        @else
+            <div class="overflow-x-auto">
+                <table class="w-full min-w-[740px] text-left text-xs">
+                    <thead class="bg-white/[.03] text-[10px] font-extrabold uppercase tracking-wider text-zinc-500">
+                        <tr>
+                            <th class="px-6 py-4">Cliente</th>
+                            <th class="px-4 py-4">WhatsApp</th>
+                            <th class="px-4 py-4">Compras acumuladas</th>
+                            <th class="px-4 py-4">Estado</th>
+                            <th class="px-6 py-4 text-right">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($clients as $client)
                         <tr class="table-row">
                             <td class="px-6 py-4">
                                 <div class="flex items-center gap-3">
@@ -96,16 +116,11 @@
                                 </div>
                             </td>
                         </tr>
-                    @empty
-                        <tr>
-                            <td colspan="5" class="px-6 py-14 text-center text-zinc-500">
-                                No encontramos clientes con esos datos. Agrega uno para empezar tu cartera.
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-        <div class="border-t border-white/[.06] px-6 py-4">{{ $clients->links() }}</div>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            <div class="border-t border-white/[.06] px-6 py-4">{{ $clients->links() }}</div>
+        @endif
     </section>
 @endsection
